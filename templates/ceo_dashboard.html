@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do CEO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Botão de Voltar -->
+        <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
+
+        <h1>Painel do CEO</h1>
+
+        <!-- Filtro por funcionário -->
+        <form id="filterForm" method="GET" action="{{ url_for('ceo_dashboard') }}">
+            <label for="employee_id">Filtrar por funcionário:</label>
+            <select id="employee_id" name="employee_id" onchange="submitForm()">
+                <option value="">Todos</option>
+                {% for employee in employees %}
+                <option value="{{ employee['id'] }}" {% if selected_employee_id == employee['id']|string %}selected{% endif %}>{{ employee['name'] }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <!-- Tabela de registros -->
+        <table>
+            <tr>
+                <th>Data</th>
+                <th>Refinaria</th>
+                <th>Pontos</th>
+                <th>Observações</th>
+                <th>Ações</th>
+            </tr>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry['date'] }}</td>
+                <td>{{ entry['refinery'] }}</td>
+                <td>{{ entry['points'] }}</td>
+                <td>{{ entry['observations'] }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('delete_entry', entry_id=entry['id']) }}" style="display:inline;">
+                        <button type="submit">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <!-- Botão de exportação e Excluir Tudo -->
+        <div class="export-link">
+            <form method="POST" action="{{ url_for('delete_all_entries') }}" style="display:inline;">
+                <input type="hidden" name="employee_id" value="{{ selected_employee_id }}">
+                <button type="submit" class="delete-all-button">Excluir Tudo</button>
+            </form>
+            <a href="{{ url_for('export') }}">Exportar para Excel</a>
+        </div>
+    </div>
+
+    <script>
+        // Função para enviar o formulário automaticamente
+        function submitForm() {
+            document.getElementById('filterForm').submit();
+        }
+    </script>
+</body>
+</html>

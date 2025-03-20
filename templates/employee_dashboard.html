@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Funcionário</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .back-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Estilo para a mensagem de sucesso */
+        .success-message {
+            display: none; /* Inicialmente oculta */
+            position: fixed; /* Fixa na tela */
+            top: 50%; /* Centraliza verticalmente */
+            left: 50%; /* Centraliza horizontalmente */
+            transform: translate(-50%, -50%); /* Ajusta o centro */
+            background-color: var(--success-color);
+            color: white;
+            padding: 1.5rem 2.5rem;
+            border-radius: var(--radius);
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000; /* Garante que fique acima de tudo */
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        /* Fundo semi-transparente */
+        .overlay {
+            display: none; /* Inicialmente oculta */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semi-transparente */
+            z-index: 999; /* Fica abaixo da mensagem */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Botão de Voltar -->
+        <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
+
+        <h1>Painel do Funcionário</h1>
+
+        <!-- Mensagem de sucesso (inicialmente oculta) -->
+        <div id="successMessage" class="success-message">Enviado!</div>
+
+        <!-- Fundo semi-transparente (inicialmente oculto) -->
+        <div id="overlay" class="overlay"></div>
+
+        <!-- Formulário -->
+        <form method="POST" onsubmit="showSuccessMessage(event)">
+            <label for="employee_id">Selecione o Funcionário:</label>
+            <select id="employee_id" name="employee_id" required>
+                {% for employee in employees %}
+                <option value="{{ employee['id'] }}">{{ employee['name'] }}</option>
+                {% endfor %}
+            </select>
+            <br>
+            <label for="refinery">Nome da Sua Refinaria:</label>
+            <input type="text" id="refinery" name="refinery" placeholder="Digite o nome da refinaria" required>
+            <br>
+            <label for="points">Quantos pontos você completou hoje?</label>
+            <input type="number" id="points" name="points" placeholder="Digite os pontos completados" required>
+            <br>
+            <label for="observations">Observações:</label>
+            <textarea id="observations" name="observations" placeholder="Digite as observações" required></textarea>
+            <br>
+            <button type="submit" id="submitButton" class="submit-button">Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        // Função para mostrar a mensagem de sucesso e enviar o formulário
+        function showSuccessMessage(event) {
+            event.preventDefault(); // Evita o envio imediato do formulário
+
+            const successMessage = document.getElementById('successMessage');
+            const overlay = document.getElementById('overlay');
+            const submitButton = document.getElementById('submitButton');
+
+            // Mostra a mensagem e o fundo semi-transparente
+            successMessage.style.display = 'block';
+            overlay.style.display = 'block';
+
+            // Desabilita o botão de enviar
+            submitButton.disabled = true;
+
+            // Envia o formulário após 1 segundo (para dar tempo de ver a mensagem)
+            setTimeout(() => {
+                event.target.submit(); // Envia o formulário
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
