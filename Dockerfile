@@ -11,12 +11,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Atualiza o pip para a versão mais recente
 RUN pip install --upgrade pip
 
+# Cria um usuário não-root para executar o aplicativo
+RUN useradd -m myuser
+USER myuser
+
+# Define o diretório de trabalho e copia os arquivos do projeto
 WORKDIR /app
-COPY . .
+COPY --chown=myuser:myuser . .
 
 # Instala as dependências do Python
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Expõe a porta 5000
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+# Define o comando para rodar o aplicativo com Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
