@@ -2,8 +2,9 @@ FROM python:3.10-slim
 
 # Instala as dependências do sistema necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    default-libmysqlclient-dev \
+    libffi-dev \
     build-essential \
+    default-libmysqlclient-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
