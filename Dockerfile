@@ -15,6 +15,9 @@ RUN pip install --upgrade pip
 RUN useradd -m myuser
 USER myuser
 
+# Adiciona /home/myuser/.local/bin ao PATH
+ENV PATH="/home/myuser/.local/bin:${PATH}"
+
 # Define o diretório de trabalho e copia os arquivos do projeto
 WORKDIR /app
 COPY --chown=myuser:myuser . .
