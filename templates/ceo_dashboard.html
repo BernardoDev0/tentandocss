@@ -51,7 +51,7 @@
         <!-- Botão de exportação e Excluir Tudo -->
         <div class="export-link">
             <form method="POST" action="{{ url_for('delete_all_entries') }}" style="display:inline;">
-                <input type="hidden" name="employee_id" value="{{ selected_employee_id }}">
+                <input type="hidden" name="employee_id" value="{{ selected_employee_id if selected_employee_id else '' }}">
                 <button type="submit" class="delete-all-button">Excluir Tudo</button>
             </form>
             <a href="{{ url_for('export') }}">Exportar para Excel</a>

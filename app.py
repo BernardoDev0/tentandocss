@@ -36,7 +36,7 @@ class Entry(db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
     date = db.Column(db.String(20), nullable=False)
     refinery = db.Column(db.String(100), nullable=False)
-    points = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.BigInteger, nullable=False)
     observations = db.Column(db.String(200), nullable=False)
 
 # Inicialização do banco de dados
@@ -259,13 +259,20 @@ def delete_entry(entry_id):
 def delete_all_entries():
     if session.get('role') != 'ceo':
         return redirect(url_for('index'))
-    
+
     selected_employee_id = request.form.get('employee_id')
-    if selected_employee_id:
-        Entry.query.filter_by(employee_id=selected_employee_id).delete()
-    else:
+
+    # Validação do employee_id
+    if selected_employee_id is None or selected_employee_id == 'None' or selected_employee_id == '':
+        # Exclui todas as entradas se nenhum employee_id for especificado
         Entry.query.delete()
-    
+    else:
+        try:
+            selected_employee_id = int(selected_employee_id)  # Converte para inteiro
+            Entry.query.filter_by(employee_id=selected_employee_id).delete()
+        except ValueError:
+            return "Erro: employee_id deve ser um número inteiro.", 400
+
     db.session.commit()
     return redirect(url_for('ceo_dashboard'))
 
