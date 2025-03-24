@@ -29,6 +29,7 @@ app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 mail = Mail(app)
+mail.init_app(app)
 
 # Set timezone to Brasilia
 os.environ['TZ'] = 'America/Sao_Paulo'
@@ -83,9 +84,13 @@ def get_week_range(date):
 def send_async_email(app, msg):
     with app.app_context():
         try:
+            mail.connect()  # Adicione esta linha para garantir a conexão
             mail.send(msg)
+            app.logger.info("Email enviado com sucesso")
         except Exception as e:
-            app.logger.error(f"Error sending email: {str(e)}")
+            app.logger.error(f"Erro ao enviar email: {str(e)}")
+            app.logger.error(f"Configurações SMTP: {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}")
+            app.logger.error(f"Usuário: {app.config['MAIL_USERNAME']}")
 
 def send_confirmation_email(employee_name, date, points, refinery, observations):
     recipient = EMPLOYEE_EMAILS.get(employee_name)
