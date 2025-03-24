@@ -64,26 +64,26 @@ class Entry(db.Model):
 def fix_database():
     """Ensure database structure is correct"""
     with app.app_context():
-        # Check if table exists
-        if not db.engine.dialect.has_table(db.engine, 'employee'):
+        # Check if table exists using the public API
+        inspector = db.inspect(db.engine)
+        if not inspector.has_table('employee'):
             db.create_all()
             return
         
         # Check if access_key column exists
-        inspector = db.inspect(db.engine)
         columns = [col['name'] for col in inspector.get_columns('employee')]
         if 'access_key' not in columns:
             try:
-                db.engine.execute('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50) NOT NULL DEFAULT \'temp_key\'')
-                db.engine.execute('ALTER TABLE employee ALTER COLUMN access_key DROP DEFAULT')
-                
-                # Set initial access keys
-                db.engine.execute("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'")
-                db.engine.execute("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'")
-                db.engine.execute("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'")
+                with db.engine.connect() as connection:
+                    connection.execute('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50) NOT NULL DEFAULT \'temp_key\'')
+                    connection.execute('ALTER TABLE employee ALTER COLUMN access_key DROP DEFAULT')
+                    
+                    # Set initial access keys
+                    connection.execute("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'")
+                    connection.execute("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'")
+                    connection.execute("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'")
             except Exception as e:
                 print(f"Database fix error: {e}")
-
 def add_initial_employees():
     employees = [
         {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
