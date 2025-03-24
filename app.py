@@ -47,6 +47,7 @@ class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     weekly_goal = db.Column(db.Integer, default=800)
+    access_key = db.Column(db.String(50), unique=True, nullable=False)
     entries = db.relationship('Entry', backref='employee', lazy=True)
 
 class Entry(db.Model):
@@ -65,14 +66,18 @@ def init_db():
 
 def add_initial_employees():
     employees = [
-        {'name': 'Rodrigo', 'weekly_goal': 800},
-        {'name': 'Maurício', 'weekly_goal': 800},
-        {'name': 'Matheus', 'weekly_goal': 800}
+        {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
+        {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
+        {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
     ]
     for emp in employees:
         existing = Employee.query.filter_by(name=emp['name']).first()
         if not existing:
-            new_employee = Employee(name=emp['name'], weekly_goal=emp['weekly_goal'])
+            new_employee = Employee(
+                name=emp['name'],
+                weekly_goal=emp['weekly_goal'],
+                access_key=emp['access_key']
+            )
             db.session.add(new_employee)
     db.session.commit()
 
@@ -84,7 +89,7 @@ def get_week_range(date):
 def send_async_email(app, msg):
     with app.app_context():
         try:
-            mail.connect()  # Adicione esta linha para garantir a conexão
+            mail.connect()
             mail.send(msg)
             app.logger.info("Email enviado com sucesso")
         except Exception as e:
@@ -101,7 +106,7 @@ def send_confirmation_email(employee_name, date, points, refinery, observations)
         subject="Confirmação de Ponto Registrado",
         sender=app.config['MAIL_USERNAME'],
         recipients=[recipient],
-        cc=[app.config['MAIL_USERNAME']]  # CC to admin
+        cc=[app.config['MAIL_USERNAME']]
     )
     
     msg.body = f"""
@@ -209,12 +214,82 @@ def export_weekly_reports():
 def index():
     return render_template('index.html')
 
-@app.route('/employee_login', methods=['GET', 'POST'])
-def employee_login():
+@app.route('/employee_login/<access_key>')
+def employee_private_login(access_key):
+    employee = Employee.query.filter_by(access_key=access_key).first()
+    if not employee:
+        return redirect(url_for('index'))
+    session['role'] = 'employee'
+    session['employee_id'] = employee.id
+    return redirect(url_for('employee_dashboard'))
+
+@app.route('/employee_dashboard', methods=['GET', 'POST'])
+def employee_dashboard():
+    if session.get('role') != 'employee':
+        return redirect(url_for('index'))
+    
+    employee_id = session.get('employee_id')
+    employee = Employee.query.get(employee_id)
+    
     if request.method == 'POST':
-        session['role'] = 'employee'
+        refinery = request.form['refinery']
+        points = request.form['points']
+        observations = request.form['observations']
+        date = datetime.now(timezone).strftime('%Y-%m-%d %H:%M:%S')
+        
+        new_entry = Entry(
+            employee_id=employee_id,
+            date=date,
+            refinery=refinery,
+            points=points,
+            observations=observations
+        )
+        db.session.add(new_entry)
+        db.session.commit()
+        
+        send_confirmation_email(
+            employee_name=employee.name,
+            date=date,
+            points=points,
+            refinery=refinery,
+            observations=observations
+        )
+        
         return redirect(url_for('employee_dashboard'))
-    return render_template('employee_login.html')
+    
+    entries = Entry.query.filter_by(employee_id=employee_id).order_by(Entry.date.desc()).all()
+    return render_template('employee_dashboard.html', employee=employee, entries=entries)
+
+@app.route('/edit_entry/<int:entry_id>', methods=['GET', 'POST'])
+def edit_entry(entry_id):
+    if session.get('role') != 'employee':
+        return redirect(url_for('index'))
+    
+    entry = Entry.query.get_or_404(entry_id)
+    if entry.employee_id != session.get('employee_id'):
+        return redirect(url_for('employee_dashboard'))
+    
+    if request.method == 'POST':
+        entry.refinery = request.form['refinery']
+        entry.points = request.form['points']
+        entry.observations = request.form['observations']
+        db.session.commit()
+        return redirect(url_for('employee_dashboard'))
+    
+    return render_template('edit_entry.html', entry=entry)
+
+@app.route('/delete_entry/<int:entry_id>', methods=['POST'])
+def delete_entry(entry_id):
+    if session.get('role') != 'employee':
+        return redirect(url_for('index'))
+    
+    entry = Entry.query.get_or_404(entry_id)
+    if entry.employee_id != session.get('employee_id'):
+        return redirect(url_for('employee_dashboard'))
+    
+    db.session.delete(entry)
+    db.session.commit()
+    return redirect(url_for('employee_dashboard'))
 
 @app.route('/ceo_login', methods=['GET', 'POST'])
 def ceo_login():
@@ -234,58 +309,6 @@ def ceo_login():
 
     return render_template('ceo_login.html', error=error)
 
-@app.route('/add_employee', methods=['GET', 'POST'])
-def add_employee():
-    if session.get('role') != 'ceo':
-        return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        name = request.form['name']
-        weekly_goal = request.form.get('weekly_goal', 800)
-        new_employee = Employee(name=name, weekly_goal=weekly_goal)
-        db.session.add(new_employee)
-        db.session.commit()
-        return redirect(url_for('index'))
-    
-    return render_template('add_employee.html')
-
-@app.route('/employee_dashboard', methods=['GET', 'POST'])
-def employee_dashboard():
-    if session.get('role') != 'employee':
-        return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        employee_id = request.form['employee_id']
-        refinery = request.form['refinery']
-        points = request.form['points']
-        observations = request.form['observations']
-        date = datetime.now(timezone).strftime('%Y-%m-%d %H:%M:%S')
-        
-        new_entry = Entry(
-            employee_id=employee_id,
-            date=date,
-            refinery=refinery,
-            points=points,
-            observations=observations
-        )
-        db.session.add(new_entry)
-        db.session.commit()
-        
-        employee = Employee.query.get(employee_id)
-        if employee and employee.name in EMPLOYEE_EMAILS:
-            send_confirmation_email(
-                employee_name=employee.name,
-                date=date,
-                points=points,
-                refinery=refinery,
-                observations=observations
-            )
-        
-        return redirect(url_for('employee_dashboard'))
-    
-    employees = Employee.query.all()
-    return render_template('employee_dashboard.html', employees=employees)
-
 @app.route('/ceo_dashboard')
 def ceo_dashboard():
     if session.get('role') != 'ceo':
@@ -300,15 +323,21 @@ def ceo_dashboard():
     employees = Employee.query.all()
     return render_template('ceo_dashboard.html', employees=employees, entries=entries, selected_employee_id=selected_employee_id)
 
-@app.route('/delete_entry/<int:entry_id>', methods=['POST'])
-def delete_entry(entry_id):
+@app.route('/add_employee', methods=['GET', 'POST'])
+def add_employee():
     if session.get('role') != 'ceo':
         return redirect(url_for('index'))
     
-    entry = Entry.query.get_or_404(entry_id)
-    db.session.delete(entry)
-    db.session.commit()
-    return redirect(url_for('ceo_dashboard'))
+    if request.method == 'POST':
+        name = request.form['name']
+        weekly_goal = request.form.get('weekly_goal', 800)
+        access_key = request.form['access_key']
+        new_employee = Employee(name=name, weekly_goal=weekly_goal, access_key=access_key)
+        db.session.add(new_employee)
+        db.session.commit()
+        return redirect(url_for('ceo_dashboard'))
+    
+    return render_template('add_employee.html')
 
 @app.route('/delete_all_entries', methods=['POST'])
 def delete_all_entries():
