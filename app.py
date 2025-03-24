@@ -17,8 +17,11 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', '3a2a136cee90c4375c8b759a65591c1a8f30145874ef8881146f16c29f599183')
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL').replace("postgres://", "postgresql://", 1)
+# Database configuration with SSL
+database_url = os.getenv('DATABASE_URL', '').replace("postgres://", "postgresql://", 1)
+if 'postgresql://' in database_url:
+    database_url += "?sslmode=require"
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -58,11 +61,28 @@ class Entry(db.Model):
     points = db.Column(db.BigInteger, nullable=False)
     observations = db.Column(db.String(200), nullable=False)
 
-# Initialize database
-def init_db():
+def fix_database():
+    """Ensure database structure is correct"""
     with app.app_context():
-        db.create_all()
-        add_initial_employees()
+        # Check if table exists
+        if not db.engine.dialect.has_table(db.engine, 'employee'):
+            db.create_all()
+            return
+        
+        # Check if access_key column exists
+        inspector = db.inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('employee')]
+        if 'access_key' not in columns:
+            try:
+                db.engine.execute('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50) NOT NULL DEFAULT \'temp_key\'')
+                db.engine.execute('ALTER TABLE employee ALTER COLUMN access_key DROP DEFAULT')
+                
+                # Set initial access keys
+                db.engine.execute("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'")
+                db.engine.execute("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'")
+                db.engine.execute("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'")
+            except Exception as e:
+                print(f"Database fix error: {e}")
 
 def add_initial_employees():
     employees = [
@@ -81,6 +101,12 @@ def add_initial_employees():
             db.session.add(new_employee)
     db.session.commit()
 
+def init_db():
+    with app.app_context():
+        fix_database()
+        db.create_all()
+        add_initial_employees()
+
 def get_week_range(date):
     start_of_week = date - timedelta(days=date.weekday())
     end_of_week = start_of_week + timedelta(days=6)
@@ -91,11 +117,9 @@ def send_async_email(app, msg):
         try:
             mail.connect()
             mail.send(msg)
-            app.logger.info("Email enviado com sucesso")
+            app.logger.info("Email sent successfully")
         except Exception as e:
-            app.logger.error(f"Erro ao enviar email: {str(e)}")
-            app.logger.error(f"Configurações SMTP: {app.config['MAIL_SERVER']}:{app.config['MAIL_PORT']}")
-            app.logger.error(f"Usuário: {app.config['MAIL_USERNAME']}")
+            app.logger.error(f"Error sending email: {str(e)}")
 
 def send_confirmation_email(employee_name, date, points, refinery, observations):
     recipient = EMPLOYEE_EMAILS.get(employee_name)
