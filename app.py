@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 from io import BytesIO
 import zipfile
@@ -7,24 +8,40 @@ import pandas as pd
 import pytz
 import os
 from dotenv import load_dotenv
+from threading import Thread
 
-# Carrega as variáveis de ambiente do arquivo .env
+# Load environment variables
 load_dotenv()
 
-# Configuração do Flask
+# Flask configuration
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta_aqui'  # Substitua por uma chave segura
+app.secret_key = os.getenv('SECRET_KEY', '3a2a136cee90c4375c8b759a65591c1a8f30145874ef8881146f16c29f599183')
 
-# Configuração do banco de dados PostgreSQL
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL').replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Configura o fuso horário de Brasília
+# Email configuration
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+mail = Mail(app)
+
+# Set timezone to Brasilia
 os.environ['TZ'] = 'America/Sao_Paulo'
 timezone = pytz.timezone('America/Sao_Paulo')
 
-# Definição dos modelos do banco de dados
+# Employee emails
+EMPLOYEE_EMAILS = {
+    'Rodrigo': 'rodrigo@monitorarconsultoria.com.br',
+    'Maurício': 'carlos.mauricio.prestserv@petrobras.com.br',
+    'Matheus': 'Matheus.e.lima.prestserv@petrobras.com.br'
+}
+
+# Database models
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -39,13 +56,12 @@ class Entry(db.Model):
     points = db.Column(db.BigInteger, nullable=False)
     observations = db.Column(db.String(200), nullable=False)
 
-# Inicialização do banco de dados
+# Initialize database
 def init_db():
     with app.app_context():
         db.create_all()
         add_initial_employees()
 
-# Adicionar funcionários iniciais
 def add_initial_employees():
     employees = [
         {'name': 'Rodrigo', 'weekly_goal': 800},
@@ -59,24 +75,56 @@ def add_initial_employees():
             db.session.add(new_employee)
     db.session.commit()
 
-# Retorna o início (segunda-feira) e o fim (domingo) da semana da data fornecida
 def get_week_range(date):
-    start_of_week = date - timedelta(days=date.weekday())  # Segunda-feira
-    end_of_week = start_of_week + timedelta(days=6)        # Domingo
+    start_of_week = date - timedelta(days=date.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
     return start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')
 
-# Exporta relatórios semanais
+def send_async_email(app, msg):
+    with app.app_context():
+        try:
+            mail.send(msg)
+        except Exception as e:
+            app.logger.error(f"Error sending email: {str(e)}")
+
+def send_confirmation_email(employee_name, date, points, refinery, observations):
+    recipient = EMPLOYEE_EMAILS.get(employee_name)
+    if not recipient:
+        return False
+    
+    msg = Message(
+        subject="Confirmação de Ponto Registrado",
+        sender=app.config['MAIL_USERNAME'],
+        recipients=[recipient],
+        cc=[app.config['MAIL_USERNAME']]  # CC to admin
+    )
+    
+    msg.body = f"""
+    Olá {employee_name},
+    
+    Seu ponto foi registrado com sucesso:
+    
+    Data/Hora: {date}
+    Refinaria: {refinery}
+    Pontos: {points}
+    Observações: {observations}
+    
+    Atenciosamente,
+    Sistema de Pontos
+    """
+    
+    Thread(target=send_async_email, args=(app, msg)).start()
+    return True
+
 def export_weekly_reports():
     employees = Employee.query.all()
-    
-    # Cria o arquivo ZIP com os dados semanais
     zip_buffer = BytesIO()
+    
     with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
         for employee in employees:
             entries = Entry.query.filter_by(employee_id=employee.id).all()
             
             if entries:
-                # Cria o DataFrame com os dados
                 data = [{
                     'id': entry.id,
                     'employee_id': entry.employee_id,
@@ -90,11 +138,16 @@ def export_weekly_reports():
                 total_points = df['points'].sum()
                 remaining_points = max(0, employee.weekly_goal - total_points)
                 
-                # Adiciona uma linha com o progresso (em português)
-                progress_row = {'id': '', 'employee_id': '', 'date': 'Total', 'refinery': '', 'points': total_points, 'observations': f'Restante: {remaining_points}'}
+                progress_row = {
+                    'id': '',
+                    'employee_id': '',
+                    'date': 'Total',
+                    'refinery': '',
+                    'points': total_points,
+                    'observations': f'Restante: {remaining_points}'
+                }
                 df = df._append(progress_row, ignore_index=True)
                 
-                # Renomeia as colunas para português
                 df.rename(columns={
                     'id': 'ID',
                     'employee_id': 'ID do Funcionário',
@@ -104,59 +157,49 @@ def export_weekly_reports():
                     'observations': 'Observações'
                 }, inplace=True)
                 
-                # Cria um escritor Excel do Pandas usando XlsxWriter como engine
                 excel_file = BytesIO()
                 writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
                 df.to_excel(writer, index=False, sheet_name=employee.name)
                 
-                # Obtém os objetos workbook e worksheet do xlsxwriter
                 workbook = writer.book
                 worksheet = writer.sheets[employee.name]
                 
-                # Formato para o cabeçalho
                 header_format = workbook.add_format({
                     'bold': True,
                     'text_wrap': True,
                     'valign': 'top',
-                    'fg_color': '#4F81BD',  # Cor de fundo do cabeçalho
-                    'font_color': 'white',  # Cor do texto do cabeçalho
-                    'font_size': 12,  # Tamanho da fonte aumentado
+                    'fg_color': '#4F81BD',
+                    'font_color': 'white',
+                    'font_size': 12,
                     'border': 1
                 })
                 
-                # Formato para a linha de total
                 total_format = workbook.add_format({
                     'bold': True,
-                    'fg_color': '#C5D9F1',  # Cor de fundo da linha de total
-                    'font_size': 12,  # Tamanho da fonte aumentado
+                    'fg_color': '#C5D9F1',
+                    'font_size': 12,
                     'border': 1
                 })
                 
-                # Escreve os cabeçalhos das colunas com o formato definido
                 for col_num, value in enumerate(df.columns.values):
                     worksheet.write(0, col_num, value, header_format)
                 
-                # Aplica o formato de total à última linha
                 last_row = len(df)
                 for col_num in range(len(df.columns)):
                     worksheet.write(last_row, col_num, df.iloc[-1, col_num], total_format)
                 
-                # Ajusta a largura das colunas
                 for i, col in enumerate(df.columns):
                     max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
                     worksheet.set_column(i, i, max_len)
                 
-                # Fecha o escritor Excel do Pandas e prepara o arquivo para leitura
                 writer.close()
                 excel_file.seek(0)
                 zip_file.writestr(f"{employee.name}.xlsx", excel_file.read())
     
     zip_buffer.seek(0)
-    
-    # Envia o arquivo ZIP como resposta para download
     return send_file(zip_buffer, as_attachment=True, download_name='relatorios_funcionarios.zip', mimetype='application/zip')
 
-# Rotas do Flask
+# Routes
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -164,30 +207,26 @@ def index():
 @app.route('/employee_login', methods=['GET', 'POST'])
 def employee_login():
     if request.method == 'POST':
-        # Autenticação simples (para fins de demonstração)
         session['role'] = 'employee'
         return redirect(url_for('employee_dashboard'))
     return render_template('employee_login.html')
 
 @app.route('/ceo_login', methods=['GET', 'POST'])
 def ceo_login():
-    error = None  # Variável para armazenar mensagens de erro
+    error = None
 
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        # Valida o nome de usuário e a senha
         if username != "Luis":
             error = "Usuário incorreto"
         elif password != "Moni4242":
             error = "Senha incorreta"
         else:
-            # Autenticação bem-sucedida
             session['role'] = 'ceo'
             return redirect(url_for('ceo_dashboard'))
 
-    # Exibe a página de login com mensagens de erro, se houver
     return render_template('ceo_login.html', error=error)
 
 @app.route('/add_employee', methods=['GET', 'POST'])
@@ -197,9 +236,7 @@ def add_employee():
     
     if request.method == 'POST':
         name = request.form['name']
-        weekly_goal = request.form.get('weekly_goal', 800)  # Meta semanal padrão é 800
-        
-        # Adiciona o novo funcionário ao banco de dados
+        weekly_goal = request.form.get('weekly_goal', 800)
         new_employee = Employee(name=name, weekly_goal=weekly_goal)
         db.session.add(new_employee)
         db.session.commit()
@@ -219,13 +256,28 @@ def employee_dashboard():
         observations = request.form['observations']
         date = datetime.now(timezone).strftime('%Y-%m-%d %H:%M:%S')
         
-        # Adiciona uma nova entrada ao banco de dados
-        new_entry = Entry(employee_id=employee_id, date=date, refinery=refinery, points=points, observations=observations)
+        new_entry = Entry(
+            employee_id=employee_id,
+            date=date,
+            refinery=refinery,
+            points=points,
+            observations=observations
+        )
         db.session.add(new_entry)
         db.session.commit()
+        
+        employee = Employee.query.get(employee_id)
+        if employee and employee.name in EMPLOYEE_EMAILS:
+            send_confirmation_email(
+                employee_name=employee.name,
+                date=date,
+                points=points,
+                refinery=refinery,
+                observations=observations
+            )
+        
         return redirect(url_for('employee_dashboard'))
     
-    # Lista os funcionários para seleção
     employees = Employee.query.all()
     return render_template('employee_dashboard.html', employees=employees)
 
@@ -234,7 +286,6 @@ def ceo_dashboard():
     if session.get('role') != 'ceo':
         return redirect(url_for('index'))
     
-    # Filtra os registros por funcionário, se especificado
     selected_employee_id = request.args.get('employee_id')
     if selected_employee_id:
         entries = Entry.query.filter_by(employee_id=selected_employee_id).all()
@@ -249,7 +300,6 @@ def delete_entry(entry_id):
     if session.get('role') != 'ceo':
         return redirect(url_for('index'))
     
-    # Exclui a entrada do banco de dados
     entry = Entry.query.get_or_404(entry_id)
     db.session.delete(entry)
     db.session.commit()
@@ -262,14 +312,11 @@ def delete_all_entries():
 
     selected_employee_id = request.form.get('employee_id')
 
-    # Validação do employee_id
-    if selected_employee_id is None or selected_employee_id == 'None' or selected_employee_id == '':
-        # Exclui todas as entradas se nenhum employee_id for especificado
+    if not selected_employee_id or selected_employee_id in ['None', '']:
         Entry.query.delete()
     else:
         try:
-            selected_employee_id = int(selected_employee_id)  # Converte para inteiro
-            Entry.query.filter_by(employee_id=selected_employee_id).delete()
+            Entry.query.filter_by(employee_id=int(selected_employee_id)).delete()
         except ValueError:
             return "Erro: employee_id deve ser um número inteiro.", 400
 
@@ -282,8 +329,8 @@ def export():
         return redirect(url_for('index'))
     return export_weekly_reports()
 
-# Inicialização do banco de dados e adição de funcionários
+# Initialize database
 init_db()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
