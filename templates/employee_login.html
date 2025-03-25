@@ -5,94 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso Funcionário</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        /* Complementos específicos para a página de login */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 2rem;
-            background-color: var(--secondary-color);
-        }
-        
-        .login-card {
-            width: 100%;
-            max-width: 450px;
-            padding: 2.5rem;
-            background-color: #1e263a;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            position: relative;
-        }
-        
-        .login-logo {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .login-logo img {
-            max-width: 120px;
-        }
-        
-        .login-title {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--text-color);
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-        
-        .login-footer {
-            text-align: center;
-            margin-top: 2rem;
-            color: var(--text-light);
-            font-size: 0.875rem;
-        }
-        
-        /* Ajuste para mensagens de erro */
-        .error-message {
-            background-color: rgba(229, 62, 62, 0.1);
-            border-left: 4px solid var(--danger-color);
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            border-radius: var(--radius-sm);
-            color: var(--text-color);
-        }
-    </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
+    <div class="container">
+        <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
+        
+        <h1>Acesso Funcionário</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="error-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <label for="access_key">Chave de Acesso:</label>
+            <input type="password" id="access_key" name="access_key" required>
             
-            <div class="login-logo">
-                <!-- Adicione sua logo aqui -->
-                <!-- <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Monitorar"> -->
-                <h1 class="login-title">Acesso Funcionário</h1>
-            </div>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="error-message">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
-            <form method="POST">
-                <div class="form-group">
-                    <label for="access_key">Chave de Acesso</label>
-                    <input type="password" id="access_key" name="access_key" required placeholder="Digite sua chave de acesso">
-                </div>
-                
-                <button type="submit" class="btn">Acessar</button>
-            </form>
-            
-            <div class="login-footer">
-                Monitorar Consultoria &copy; {{ now.year }}
-            </div>
-        </div>
+            <button type="submit">Acessar</button>
+        </form>
     </div>
 </body>
 </html>
