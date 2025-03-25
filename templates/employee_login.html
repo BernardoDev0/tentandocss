@@ -6,74 +6,135 @@
     <title>Acesso Funcionário</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+        
         .back-button {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 10px;
-            background-color: #007bff;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: #2c3e50;
             color: white;
             text-decoration: none;
             border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
         }
+        
         .back-button:hover {
-            background-color: #0056b3;
+            background-color: #1a252f;
+            transform: translateY(-2px);
         }
-        .error-message {
-            color: red;
-            margin: 15px 0;
-            padding: 10px;
-            background-color: #ffeeee;
-            border: 1px solid #ffcccc;
-            border-radius: 5px;
+        
+        .login-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
             text-align: center;
         }
-        .login-form {
-            max-width: 400px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        
+        .logo {
+            width: 120px;
+            margin-bottom: 20px;
         }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            text-align: left;
         }
+        
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            color: #7f8c8d;
+            font-weight: 600;
         }
+        
         input[type="password"] {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s;
             box-sizing: border-box;
         }
-        button[type="submit"] {
+        
+        input[type="password"]:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn-login {
             width: 100%;
-            padding: 10px;
-            background-color: #28a745;
+            padding: 14px;
+            background-color: #3498db;
             color: white;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 6px;
             font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
         }
-        button[type="submit"]:hover {
-            background-color: #218838;
+        
+        .btn-login:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3);
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            background-color: #fdecea;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
+    <a href="{{ url_for('index') }}" class="back-button">← Voltar</a>
+    
     <div class="container">
-        <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
-        
-        <div class="login-form">
+        <div class="login-card">
+            <!-- Adicione seu logo aqui -->
+            <!-- <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo"> -->
+            
             <h1>Acesso Funcionário</h1>
             
-            <!-- Exibe mensagens de erro -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -84,12 +145,16 @@
             
             <form method="POST">
                 <div class="form-group">
-                    <label for="access_key">Chave de Acesso:</label>
-                    <input type="password" id="access_key" name="access_key" required>
+                    <label for="access_key">Chave de Acesso</label>
+                    <input type="password" id="access_key" name="access_key" required placeholder="Digite sua chave de acesso">
                 </div>
                 
-                <button type="submit">Acessar</button>
+                <button type="submit" class="btn-login">Acessar</button>
             </form>
+            
+            <div class="footer">
+                Monitorar Consultoria © 2023
+            </div>
         </div>
     </div>
 </body>
