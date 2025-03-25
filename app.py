@@ -204,11 +204,16 @@ def employee_dashboard():
     
     if request.method == 'POST':
         try:
+            # Verifica se os pontos são um número válido
+            points = int(request.form['points'])
+            if points < 0:
+                raise ValueError("Pontos não podem ser negativos")
+                
             new_entry = Entry(
                 employee_id=employee.id,
                 date=datetime.now(timezone).strftime('%Y-%m-%d %H:%M:%S'),
                 refinery=request.form['refinery'],
-                points=int(request.form['points']),
+                points=points,
                 observations=request.form['observations']
             )
             db.session.add(new_entry)
@@ -223,14 +228,41 @@ def employee_dashboard():
             )
             
             flash('Registro adicionado com sucesso!', 'success')
+            return redirect(url_for('employee_dashboard'))
+            
+        except ValueError:
+            db.session.rollback()
+            flash('Por favor, insira um valor válido para os pontos', 'error')
         except Exception as e:
             db.session.rollback()
             flash('Erro ao adicionar registro', 'error')
-        
-        return redirect(url_for('employee_dashboard'))
     
     entries = Entry.query.filter_by(employee_id=employee.id).order_by(Entry.date.desc()).all()
     return render_template('employee_dashboard.html', employee=employee, entries=entries)
+
+@app.route('/edit_entry/<int:entry_id>', methods=['GET', 'POST'])
+def edit_entry(entry_id):
+    """Edição de registro"""
+    if 'role' not in session or session['role'] != 'employee':
+        return redirect(url_for('index'))
+    
+    entry = Entry.query.get_or_404(entry_id)
+    if entry.employee_id != session['employee_id']:
+        return redirect(url_for('employee_dashboard'))
+    
+    if request.method == 'POST':
+        try:
+            entry.refinery = request.form['refinery']
+            entry.points = int(request.form['points'])
+            entry.observations = request.form['observations']
+            db.session.commit()
+            flash('Registro atualizado com sucesso!', 'success')
+            return redirect(url_for('employee_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao atualizar registro', 'error')
+    
+    return render_template('edit_entry.html', entry=entry)
 
 @app.route('/delete_entry/<int:entry_id>', methods=['POST'])
 def delete_entry(entry_id):

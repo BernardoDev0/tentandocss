@@ -19,6 +19,46 @@
         .back-button:hover {
             background-color: #0056b3;
         }
+        .success-message {
+            color: green;
+            margin: 10px 0;
+        }
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .action-buttons a {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 5px;
+        }
+        .action-buttons form {
+            display: inline;
+        }
+        .action-buttons button {
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -27,6 +67,15 @@
         
         <h1>Painel de {{ employee.name }}</h1>
         <p>Meta semanal: {{ employee.weekly_goal }} pontos</p>
+
+        <!-- Mensagens flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
         <h2>Novo Registro</h2>
         <form method="POST">
@@ -43,6 +92,7 @@
         </form>
 
         <h2>Seus Registros</h2>
+        {% if entries %}
         <table>
             <thead>
                 <tr>
@@ -60,7 +110,7 @@
                     <td>{{ entry.refinery }}</td>
                     <td>{{ entry.points }}</td>
                     <td>{{ entry.observations }}</td>
-                    <td>
+                    <td class="action-buttons">
                         <a href="{{ url_for('edit_entry', entry_id=entry.id) }}">Editar</a>
                         <form method="POST" action="{{ url_for('delete_entry', entry_id=entry.id) }}">
                             <button type="submit">Excluir</button>
@@ -70,6 +120,9 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <p>Nenhum registro encontrado.</p>
+        {% endif %}
     </div>
 </body>
 </html>

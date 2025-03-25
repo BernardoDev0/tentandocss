@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Registro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .back-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .success-message {
+            color: green;
+            margin: 10px 0;
+        }
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('employee_dashboard') }}" class="back-button">Voltar</a>
+        
+        <h1>Editar Registro</h1>
+
+        <!-- Mensagens flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ category }}-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label for="refinery">Refinaria:</label>
+            <input type="text" id="refinery" name="refinery" value="{{ entry.refinery }}" required>
+            
+            <label for="points">Pontos:</label>
+            <input type="number" id="points" name="points" value="{{ entry.points }}" required min="0">
+            
+            <label for="observations">Observações:</label>
+            <textarea id="observations" name="observations" required>{{ entry.observations }}</textarea>
+            
+            <button type="submit">Salvar Alterações</button>
+        </form>
+    </div>
+</body>
+</html>
