@@ -1,24 +1,17 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitorar Cadastro</title>
+    <title>Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
         <h1>Monitorar Cadastro</h1>
         <div class="home-links">
+            <a href="{{ url_for('employee_login') }}">Login Funcionário</a>
             <a href="{{ url_for('ceo_login') }}">Login CEO</a>
-        </div>
-        <div class="employee-access">
-            <h3>Acesso Funcionários:</h3>
-            <ul>
-                <li><a href="{{ url_for('employee_private_login', access_key='rodrigo123') }}">Acesso Rodrigo</a></li>
-                <li><a href="{{ url_for('employee_private_login', access_key='mauricio123') }}">Acesso Maurício</a></li>
-                <li><a href="{{ url_for('employee_private_login', access_key='matheus123') }}">Acesso Matheus</a></li>
-            </ul>
         </div>
     </div>
 </body>
