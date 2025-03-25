@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 from io import BytesIO
-from sqlalchemy import text 
+from sqlalchemy import text
 import zipfile
 import pandas as pd
 import pytz
@@ -11,14 +11,14 @@ import os
 from dotenv import load_dotenv
 from threading import Thread
 
-# Load environment variables
+# Carrega variáveis de ambiente
 load_dotenv()
 
-# Flask configuration
+# Configuração do Flask
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', '3a2a136cee90c4375c8b759a65591c1a8f30145874ef8881146f16c29f599183')
+app.secret_key = os.getenv('SECRET_KEY', 'uma-chave-secreta-padrao-segura')
 
-# Database configuration with SSL
+# Configuração do banco de dados
 database_url = os.getenv('DATABASE_URL', '').replace("postgres://", "postgresql://", 1)
 if 'postgresql://' in database_url:
     database_url += "?sslmode=require"
@@ -26,27 +26,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Email configuration
+# Configuração de email
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 mail = Mail(app)
-mail.init_app(app)
 
-# Set timezone to Brasilia
-os.environ['TZ'] = 'America/Sao_Paulo'
+# Fuso horário
 timezone = pytz.timezone('America/Sao_Paulo')
 
-# Employee emails
-EMPLOYEE_EMAILS = {
-    'Rodrigo': 'rodrigo@monitorarconsultoria.com.br',
-    'Maurício': 'carlos.mauricio.prestserv@petrobras.com.br',
-    'Matheus': 'Matheus.e.lima.prestserv@petrobras.com.br'
-}
-
-# Database models
+# Modelos do banco de dados
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -59,152 +50,74 @@ class Entry(db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
     date = db.Column(db.String(20), nullable=False)
     refinery = db.Column(db.String(100), nullable=False)
-    points = db.Column(db.BigInteger, nullable=False)
+    points = db.Column(db.Integer, nullable=False)
     observations = db.Column(db.String(200), nullable=False)
 
-def fix_database():
-    """Ensure database structure is correct"""
-    with app.app_context():
-        inspector = db.inspect(db.engine)
-        
-        # Check if table exists
-        if not inspector.has_table('employee'):
-            db.create_all()
-            return
-        
-        # Check if access_key column exists
-        columns = [col['name'] for col in inspector.get_columns('employee')]
-        if 'access_key' not in columns:
-            try:
-                # Usando text() para comandos SQL
-                db.session.execute(text('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50)'))
-                db.session.execute(text("UPDATE employee SET access_key = 'temp_key'"))
-                db.session.commit()
-                
-                # Set initial access keys
-                db.session.execute(text("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'"))
-                db.session.execute(text("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'"))
-                db.session.execute(text("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'"))
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                print(f"Database fix error: {e}")
-
-def add_initial_employees():
-    # Primeiro verifica se a tabela employee existe
-    inspector = db.inspect(db.engine)
-    if not inspector.has_table('employee'):
-        db.create_all()
-    
-    # Verifica se a coluna access_key existe
-    columns = [col['name'] for col in inspector.get_columns('employee')]
-    has_access_key = 'access_key' in columns
-    
-    employees = [
-        {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
-        {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
-        {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
-    ]
-    
-    for emp in employees:
-        # Query modificada para não incluir access_key se não existir
-        query = db.session.query(Employee).filter_by(name=emp['name'])
-        if has_access_key:
-            query = query.add_columns(Employee.access_key)
-        existing = query.first()
-        
-        if not existing:
-            employee_data = {
-                'name': emp['name'],
-                'weekly_goal': emp['weekly_goal']
-            }
-            if has_access_key:
-                employee_data['access_key'] = emp['access_key']
-            
-            new_employee = Employee(**employee_data)
-            db.session.add(new_employee)
-    db.session.commit()
-
-def add_initial_employees():
-    # Primeiro verifica se a coluna access_key existe
-    inspector = db.inspect(db.engine)
-    columns = [col['name'] for col in inspector.get_columns('employee')]
-    has_access_key = 'access_key' in columns
-    
-    employees = [
-        {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
-        {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
-        {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
-    ]
-    
-    for emp in employees:
-        existing = Employee.query.filter_by(name=emp['name']).first()
-        if not existing:
-            # Cria o employee com ou sem access_key dependendo do estado do banco
-            if has_access_key:
-                new_employee = Employee(
-                    name=emp['name'],
-                    weekly_goal=emp['weekly_goal'],
-                    access_key=emp['access_key']
-                )
-            else:
-                new_employee = Employee(
-                    name=emp['name'],
-                    weekly_goal=emp['weekly_goal']
-                )
-            db.session.add(new_employee)
-    db.session.commit()
-
+# Funções auxiliares
 def init_db():
+    """Inicializa o banco de dados"""
     with app.app_context():
-        fix_database()
         db.create_all()
-        add_initial_employees()
+        create_initial_employees()
 
-def get_week_range(date):
-    start_of_week = date - timedelta(days=date.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
-    return start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')
+def create_initial_employees():
+    """Cria os funcionários iniciais se não existirem"""
+    employees = [
+        {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
+        {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
+        {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
+    ]
+    
+    for emp in employees:
+        if not Employee.query.filter_by(name=emp['name']).first():
+            new_employee = Employee(
+                name=emp['name'],
+                weekly_goal=emp['weekly_goal'],
+                access_key=emp['access_key']
+            )
+            db.session.add(new_employee)
+    db.session.commit()
 
 def send_async_email(app, msg):
+    """Envia email em segundo plano"""
     with app.app_context():
         try:
-            mail.connect()
             mail.send(msg)
-            app.logger.info("Email sent successfully")
         except Exception as e:
-            app.logger.error(f"Error sending email: {str(e)}")
+            app.logger.error(f"Erro ao enviar email: {str(e)}")
 
 def send_confirmation_email(employee_name, date, points, refinery, observations):
-    recipient = EMPLOYEE_EMAILS.get(employee_name)
-    if not recipient:
-        return False
+    """Envia email de confirmação"""
+    recipient = {
+        'Rodrigo': 'rodrigo@monitorarconsultoria.com.br',
+        'Maurício': 'carlos.mauricio.prestserv@petrobras.com.br',
+        'Matheus': 'Matheus.e.lima.prestserv@petrobras.com.br'
+    }.get(employee_name)
     
-    msg = Message(
-        subject="Confirmação de Ponto Registrado",
-        sender=app.config['MAIL_USERNAME'],
-        recipients=[recipient],
-        cc=[app.config['MAIL_USERNAME']]
-    )
-    
-    msg.body = f"""
-    Olá {employee_name},
-    
-    Seu ponto foi registrado com sucesso:
-    
-    Data/Hora: {date}
-    Refinaria: {refinery}
-    Pontos: {points}
-    Observações: {observations}
-    
-    Atenciosamente,
-    Sistema de Pontos
-    """
-    
-    Thread(target=send_async_email, args=(app, msg)).start()
-    return True
+    if recipient:
+        msg = Message(
+            subject="Confirmação de Ponto Registrado",
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[recipient],
+            cc=[app.config['MAIL_USERNAME']]
+        )
+        msg.body = f"""
+        Olá {employee_name},
+        
+        Seu ponto foi registrado com sucesso:
+        
+        Data/Hora: {date}
+        Refinaria: {refinery}
+        Pontos: {points}
+        Observações: {observations}
+        
+        Atenciosamente,
+        Sistema de Pontos
+        """
+        Thread(target=send_async_email, args=(app, msg)).start()
 
 def export_weekly_reports():
+    """Exporta relatórios em Excel"""
     employees = Employee.query.all()
     zip_buffer = BytesIO()
     
@@ -214,235 +127,201 @@ def export_weekly_reports():
             
             if entries:
                 data = [{
-                    'id': entry.id,
-                    'employee_id': entry.employee_id,
-                    'date': entry.date,
-                    'refinery': entry.refinery,
-                    'points': entry.points,
-                    'observations': entry.observations
+                    'Data': entry.date,
+                    'Refinaria': entry.refinery,
+                    'Pontos': entry.points,
+                    'Observações': entry.observations
                 } for entry in entries]
                 
                 df = pd.DataFrame(data)
-                total_points = df['points'].sum()
+                total_points = df['Pontos'].sum()
                 remaining_points = max(0, employee.weekly_goal - total_points)
                 
                 progress_row = {
-                    'id': '',
-                    'employee_id': '',
-                    'date': 'Total',
-                    'refinery': '',
-                    'points': total_points,
-                    'observations': f'Restante: {remaining_points}'
+                    'Data': 'Total',
+                    'Refinaria': '',
+                    'Pontos': total_points,
+                    'Observações': f'Restante: {remaining_points}'
                 }
                 df = df._append(progress_row, ignore_index=True)
                 
-                df.rename(columns={
-                    'id': 'ID',
-                    'employee_id': 'ID do Funcionário',
-                    'date': 'Data',
-                    'refinery': 'Refinaria',
-                    'points': 'Pontos',
-                    'observations': 'Observações'
-                }, inplace=True)
-                
                 excel_file = BytesIO()
-                writer = pd.ExcelWriter(excel_file, engine='xlsxwriter')
-                df.to_excel(writer, index=False, sheet_name=employee.name)
+                with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
+                    df.to_excel(writer, index=False, sheet_name=employee.name)
+                    
+                    workbook = writer.book
+                    worksheet = writer.sheets[employee.name]
+                    
+                    header_format = workbook.add_format({
+                        'bold': True,
+                        'bg_color': '#4F81BD',
+                        'font_color': 'white',
+                        'border': 1
+                    })
+                    
+                    for col_num, value in enumerate(df.columns.values):
+                        worksheet.write(0, col_num, value, header_format)
+                    
+                    for i, col in enumerate(df.columns):
+                        max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+                        worksheet.set_column(i, i, max_len)
                 
-                workbook = writer.book
-                worksheet = writer.sheets[employee.name]
-                
-                header_format = workbook.add_format({
-                    'bold': True,
-                    'text_wrap': True,
-                    'valign': 'top',
-                    'fg_color': '#4F81BD',
-                    'font_color': 'white',
-                    'font_size': 12,
-                    'border': 1
-                })
-                
-                total_format = workbook.add_format({
-                    'bold': True,
-                    'fg_color': '#C5D9F1',
-                    'font_size': 12,
-                    'border': 1
-                })
-                
-                for col_num, value in enumerate(df.columns.values):
-                    worksheet.write(0, col_num, value, header_format)
-                
-                last_row = len(df)
-                for col_num in range(len(df.columns)):
-                    worksheet.write(last_row, col_num, df.iloc[-1, col_num], total_format)
-                
-                for i, col in enumerate(df.columns):
-                    max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
-                    worksheet.set_column(i, i, max_len)
-                
-                writer.close()
                 excel_file.seek(0)
                 zip_file.writestr(f"{employee.name}.xlsx", excel_file.read())
     
     zip_buffer.seek(0)
     return send_file(zip_buffer, as_attachment=True, download_name='relatorios_funcionarios.zip', mimetype='application/zip')
 
-# Routes
+# Rotas
 @app.route('/')
 def index():
+    """Página inicial com opções de login"""
     return render_template('index.html')
 
-@app.route('/employee_login/<access_key>')
-def employee_private_login(access_key):
-    employee = Employee.query.filter_by(access_key=access_key).first()
-    if not employee:
-        return redirect(url_for('index'))
-    session['role'] = 'employee'
-    session['employee_id'] = employee.id
-    return redirect(url_for('employee_dashboard'))
+@app.route('/employee_login', methods=['GET', 'POST'])
+def employee_login():
+    """Login de funcionário com chave de acesso"""
+    if request.method == 'POST':
+        access_key = request.form['access_key']
+        employee = Employee.query.filter_by(access_key=access_key).first()
+        
+        if employee:
+            session['role'] = 'employee'
+            session['employee_id'] = employee.id
+            return redirect(url_for('employee_dashboard'))
+        else:
+            flash('Chave de acesso inválida', 'error')
+    
+    return render_template('employee_login.html')
 
 @app.route('/employee_dashboard', methods=['GET', 'POST'])
 def employee_dashboard():
-    if session.get('role') != 'employee':
+    """Painel do funcionário"""
+    if 'role' not in session or session['role'] != 'employee':
         return redirect(url_for('index'))
     
-    employee_id = session.get('employee_id')
-    employee = Employee.query.get(employee_id)
+    employee = Employee.query.get(session['employee_id'])
     
     if request.method == 'POST':
-        refinery = request.form['refinery']
-        points = request.form['points']
-        observations = request.form['observations']
-        date = datetime.now(timezone).strftime('%Y-%m-%d %H:%M:%S')
-        
-        new_entry = Entry(
-            employee_id=employee_id,
-            date=date,
-            refinery=refinery,
-            points=points,
-            observations=observations
-        )
-        db.session.add(new_entry)
-        db.session.commit()
-        
-        send_confirmation_email(
-            employee_name=employee.name,
-            date=date,
-            points=points,
-            refinery=refinery,
-            observations=observations
-        )
+        try:
+            new_entry = Entry(
+                employee_id=employee.id,
+                date=datetime.now(timezone).strftime('%Y-%m-%d %H:%M:%S'),
+                refinery=request.form['refinery'],
+                points=int(request.form['points']),
+                observations=request.form['observations']
+            )
+            db.session.add(new_entry)
+            db.session.commit()
+            
+            send_confirmation_email(
+                employee.name,
+                new_entry.date,
+                new_entry.points,
+                new_entry.refinery,
+                new_entry.observations
+            )
+            
+            flash('Registro adicionado com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao adicionar registro', 'error')
         
         return redirect(url_for('employee_dashboard'))
     
-    entries = Entry.query.filter_by(employee_id=employee_id).order_by(Entry.date.desc()).all()
+    entries = Entry.query.filter_by(employee_id=employee.id).order_by(Entry.date.desc()).all()
     return render_template('employee_dashboard.html', employee=employee, entries=entries)
-
-@app.route('/edit_entry/<int:entry_id>', methods=['GET', 'POST'])
-def edit_entry(entry_id):
-    if session.get('role') != 'employee':
-        return redirect(url_for('index'))
-    
-    entry = Entry.query.get_or_404(entry_id)
-    if entry.employee_id != session.get('employee_id'):
-        return redirect(url_for('employee_dashboard'))
-    
-    if request.method == 'POST':
-        entry.refinery = request.form['refinery']
-        entry.points = request.form['points']
-        entry.observations = request.form['observations']
-        db.session.commit()
-        return redirect(url_for('employee_dashboard'))
-    
-    return render_template('edit_entry.html', entry=entry)
 
 @app.route('/delete_entry/<int:entry_id>', methods=['POST'])
 def delete_entry(entry_id):
-    if session.get('role') != 'employee':
+    """Exclusão de registro"""
+    if 'role' not in session or session['role'] != 'employee':
         return redirect(url_for('index'))
     
     entry = Entry.query.get_or_404(entry_id)
-    if entry.employee_id != session.get('employee_id'):
-        return redirect(url_for('employee_dashboard'))
+    if entry.employee_id == session['employee_id']:
+        db.session.delete(entry)
+        db.session.commit()
+        flash('Registro excluído com sucesso!', 'success')
     
-    db.session.delete(entry)
-    db.session.commit()
     return redirect(url_for('employee_dashboard'))
 
+# Rotas do CEO
 @app.route('/ceo_login', methods=['GET', 'POST'])
 def ceo_login():
-    error = None
-
+    """Login do CEO"""
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        if username != "Luis":
-            error = "Usuário incorreto"
-        elif password != "Moni4242":
-            error = "Senha incorreta"
-        else:
+        if request.form['username'] == "Luis" and request.form['password'] == "Moni4242":
             session['role'] = 'ceo'
             return redirect(url_for('ceo_dashboard'))
-
-    return render_template('ceo_login.html', error=error)
+        flash('Credenciais inválidas', 'error')
+    return render_template('ceo_login.html')
 
 @app.route('/ceo_dashboard')
 def ceo_dashboard():
-    if session.get('role') != 'ceo':
+    """Painel do CEO"""
+    if 'role' not in session or session['role'] != 'ceo':
         return redirect(url_for('index'))
     
-    selected_employee_id = request.args.get('employee_id')
-    if selected_employee_id:
-        entries = Entry.query.filter_by(employee_id=selected_employee_id).all()
-    else:
-        entries = Entry.query.all()
-    
-    employees = Employee.query.all()
-    return render_template('ceo_dashboard.html', employees=employees, entries=entries, selected_employee_id=selected_employee_id)
+    employee_id = request.args.get('employee_id')
+    entries = Entry.query.filter_by(employee_id=employee_id).all() if employee_id else Entry.query.all()
+    return render_template('ceo_dashboard.html', 
+                         employees=Employee.query.all(),
+                         entries=entries,
+                         selected_employee_id=employee_id)
 
 @app.route('/add_employee', methods=['GET', 'POST'])
 def add_employee():
-    if session.get('role') != 'ceo':
+    """Adicionar novo funcionário"""
+    if 'role' not in session or session['role'] != 'ceo':
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        name = request.form['name']
-        weekly_goal = request.form.get('weekly_goal', 800)
-        access_key = request.form['access_key']
-        new_employee = Employee(name=name, weekly_goal=weekly_goal, access_key=access_key)
-        db.session.add(new_employee)
-        db.session.commit()
-        return redirect(url_for('ceo_dashboard'))
+        try:
+            new_employee = Employee(
+                name=request.form['name'],
+                weekly_goal=int(request.form.get('weekly_goal', 800)),
+                access_key=request.form['access_key']
+            )
+            db.session.add(new_employee)
+            db.session.commit()
+            flash('Funcionário adicionado com sucesso!', 'success')
+            return redirect(url_for('ceo_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao adicionar funcionário', 'error')
     
     return render_template('add_employee.html')
 
 @app.route('/delete_all_entries', methods=['POST'])
 def delete_all_entries():
-    if session.get('role') != 'ceo':
+    """Excluir todos os registros"""
+    if 'role' not in session or session['role'] != 'ceo':
         return redirect(url_for('index'))
-
-    selected_employee_id = request.form.get('employee_id')
-
-    if not selected_employee_id or selected_employee_id in ['None', '']:
-        Entry.query.delete()
-    else:
-        try:
-            Entry.query.filter_by(employee_id=int(selected_employee_id)).delete()
-        except ValueError:
-            return "Erro: employee_id deve ser um número inteiro.", 400
-
-    db.session.commit()
+    
+    employee_id = request.form.get('employee_id')
+    
+    try:
+        if employee_id and employee_id not in ['None', '']:
+            Entry.query.filter_by(employee_id=int(employee_id)).delete()
+        else:
+            Entry.query.delete()
+        db.session.commit()
+        flash('Registros excluídos com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro ao excluir registros', 'error')
+    
     return redirect(url_for('ceo_dashboard'))
 
 @app.route('/export')
 def export():
-    if session.get('role') != 'ceo':
+    """Exportar dados para Excel"""
+    if 'role' not in session or session['role'] != 'ceo':
         return redirect(url_for('index'))
     return export_weekly_reports()
 
-# Initialize database
-init_db()
-
+# Inicialização
 if __name__ == '__main__':
+    init_db()
     app.run(host='0.0.0.0', debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
