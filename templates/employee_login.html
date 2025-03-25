@@ -19,9 +19,50 @@
         .back-button:hover {
             background-color: #0056b3;
         }
-        .error {
+        .error-message {
             color: red;
-            margin-bottom: 10px;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #ffeeee;
+            border: 1px solid #ffcccc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .login-form {
+            max-width: 400px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button[type="submit"]:hover {
+            background-color: #218838;
         }
     </style>
 </head>
@@ -29,18 +70,27 @@
     <div class="container">
         <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
         
-        <h1>Acesso Funcionário</h1>
-        
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-        
-        <form method="POST">
-            <label for="access_key">Chave de Acesso:</label>
-            <input type="password" id="access_key" name="access_key" required>
-            <br>
-            <button type="submit">Acessar</button>
-        </form>
+        <div class="login-form">
+            <h1>Acesso Funcionário</h1>
+            
+            <!-- Exibe mensagens de erro -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="error-message">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label for="access_key">Chave de Acesso:</label>
+                    <input type="password" id="access_key" name="access_key" required>
+                </div>
+                
+                <button type="submit">Acessar</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
