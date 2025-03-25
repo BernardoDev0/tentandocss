@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 from io import BytesIO
+from sqlalchemy import text 
 import zipfile
 import pandas as pd
 import pytz
@@ -75,19 +76,54 @@ def fix_database():
         columns = [col['name'] for col in inspector.get_columns('employee')]
         if 'access_key' not in columns:
             try:
-                # Usando db.session.execute para executar comandos SQL
-                db.session.execute('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50)')
-                db.session.execute("UPDATE employee SET access_key = 'temp_key'")
+                # Usando text() para comandos SQL
+                db.session.execute(text('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50)'))
+                db.session.execute(text("UPDATE employee SET access_key = 'temp_key'"))
                 db.session.commit()
                 
                 # Set initial access keys
-                db.session.execute("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'")
-                db.session.execute("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'")
-                db.session.execute("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'")
+                db.session.execute(text("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'"))
+                db.session.execute(text("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'"))
+                db.session.execute(text("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'"))
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
                 print(f"Database fix error: {e}")
+
+def add_initial_employees():
+    # Primeiro verifica se a tabela employee existe
+    inspector = db.inspect(db.engine)
+    if not inspector.has_table('employee'):
+        db.create_all()
+    
+    # Verifica se a coluna access_key existe
+    columns = [col['name'] for col in inspector.get_columns('employee')]
+    has_access_key = 'access_key' in columns
+    
+    employees = [
+        {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
+        {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
+        {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
+    ]
+    
+    for emp in employees:
+        # Query modificada para não incluir access_key se não existir
+        query = db.session.query(Employee).filter_by(name=emp['name'])
+        if has_access_key:
+            query = query.add_columns(Employee.access_key)
+        existing = query.first()
+        
+        if not existing:
+            employee_data = {
+                'name': emp['name'],
+                'weekly_goal': emp['weekly_goal']
+            }
+            if has_access_key:
+                employee_data['access_key'] = emp['access_key']
+            
+            new_employee = Employee(**employee_data)
+            db.session.add(new_employee)
+    db.session.commit()
 
 def add_initial_employees():
     # Primeiro verifica se a coluna access_key existe
