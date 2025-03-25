@@ -64,8 +64,9 @@ class Entry(db.Model):
 def fix_database():
     """Ensure database structure is correct"""
     with app.app_context():
-        # Check if table exists using the public API
         inspector = db.inspect(db.engine)
+        
+        # Check if table exists
         if not inspector.has_table('employee'):
             db.create_all()
             return
@@ -74,30 +75,47 @@ def fix_database():
         columns = [col['name'] for col in inspector.get_columns('employee')]
         if 'access_key' not in columns:
             try:
-                with db.engine.connect() as connection:
-                    connection.execute('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50) NOT NULL DEFAULT \'temp_key\'')
-                    connection.execute('ALTER TABLE employee ALTER COLUMN access_key DROP DEFAULT')
-                    
-                    # Set initial access keys
-                    connection.execute("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'")
-                    connection.execute("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'")
-                    connection.execute("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'")
+                # Usando db.session.execute para executar comandos SQL
+                db.session.execute('ALTER TABLE employee ADD COLUMN access_key VARCHAR(50)')
+                db.session.execute("UPDATE employee SET access_key = 'temp_key'")
+                db.session.commit()
+                
+                # Set initial access keys
+                db.session.execute("UPDATE employee SET access_key = 'rodrigo123' WHERE name = 'Rodrigo'")
+                db.session.execute("UPDATE employee SET access_key = 'mauricio123' WHERE name = 'Maurício'")
+                db.session.execute("UPDATE employee SET access_key = 'matheus123' WHERE name = 'Matheus'")
+                db.session.commit()
             except Exception as e:
+                db.session.rollback()
                 print(f"Database fix error: {e}")
+
 def add_initial_employees():
+    # Primeiro verifica se a coluna access_key existe
+    inspector = db.inspect(db.engine)
+    columns = [col['name'] for col in inspector.get_columns('employee')]
+    has_access_key = 'access_key' in columns
+    
     employees = [
         {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
         {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
         {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
     ]
+    
     for emp in employees:
         existing = Employee.query.filter_by(name=emp['name']).first()
         if not existing:
-            new_employee = Employee(
-                name=emp['name'],
-                weekly_goal=emp['weekly_goal'],
-                access_key=emp['access_key']
-            )
+            # Cria o employee com ou sem access_key dependendo do estado do banco
+            if has_access_key:
+                new_employee = Employee(
+                    name=emp['name'],
+                    weekly_goal=emp['weekly_goal'],
+                    access_key=emp['access_key']
+                )
+            else:
+                new_employee = Employee(
+                    name=emp['name'],
+                    weekly_goal=emp['weekly_goal']
+                )
             db.session.add(new_employee)
     db.session.commit()
 
