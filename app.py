@@ -173,6 +173,12 @@ def export_weekly_reports():
     return send_file(zip_buffer, as_attachment=True, download_name='relatorios_funcionarios.zip', mimetype='application/zip')
 
 # Rotas
+@app.before_first_request
+def reset_db():
+    db.drop_all()
+    db.create_all()
+    create_initial_employees()
+    
 @app.route('/')
 def index():
     """Página inicial com opções de login"""
