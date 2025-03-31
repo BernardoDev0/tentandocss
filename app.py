@@ -41,7 +41,7 @@ timezone = pytz.timezone('America/Sao_Paulo')
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    weekly_goal = db.Column(db.Integer, default=800)
+    weekly_goal = db.Column(db.Integer, default=2375)
     access_key = db.Column(db.String(50), unique=True, nullable=False)
     entries = db.relationship('Entry', backref='employee', lazy=True)
 
@@ -63,9 +63,9 @@ def init_db():
 def create_initial_employees():
     """Cria os funcionários iniciais se não existirem"""
     employees = [
-        {'name': 'Rodrigo', 'weekly_goal': 800, 'access_key': 'rodrigo123'},
-        {'name': 'Maurício', 'weekly_goal': 800, 'access_key': 'mauricio123'},
-        {'name': 'Matheus', 'weekly_goal': 800, 'access_key': 'matheus123'}
+        {'name': 'Rodrigo', 'weekly_goal': 2375, 'access_key': 'rodrigo123'},
+        {'name': 'Maurício', 'weekly_goal': 2375, 'access_key': 'mauricio123'},
+        {'name': 'Matheus', 'weekly_goal': 2375, 'access_key': 'matheus123'}
     ]
     
     for emp in employees:
@@ -178,21 +178,27 @@ def index():
     """Página inicial com opções de login"""
     return render_template('index.html')
 
-@app.route('/employee_login', methods=['GET', 'POST'])
-def employee_login():
-    """Login de funcionário com chave de acesso"""
+@app.route('/login', methods=['GET', 'POST'])
+def login():
     if request.method == 'POST':
-        access_key = request.form['access_key']
-        employee = Employee.query.filter_by(access_key=access_key).first()
+        username = request.form['username']
+        password = request.form['password']
         
+        # Verifica se é CEO
+        if username == "Luis" and password == "Moni4242":
+            session['role'] = 'ceo'
+            return redirect(url_for('ceo_dashboard'))
+        
+        # Verifica se é funcionário
+        employee = Employee.query.filter_by(name=username, access_key=password).first()
         if employee:
             session['role'] = 'employee'
             session['employee_id'] = employee.id
             return redirect(url_for('employee_dashboard'))
-        else:
-            flash('Chave de acesso inválida', 'error')
+        
+        flash('Usuário ou senha inválidos', 'error')
     
-    return render_template('employee_login.html')
+    return render_template('login.html')  # Template único
 
 @app.route('/employee_dashboard', methods=['GET', 'POST'])
 def employee_dashboard():
@@ -278,16 +284,6 @@ def delete_entry(entry_id):
     
     return redirect(url_for('employee_dashboard'))
 
-# Rotas do CEO
-@app.route('/ceo_login', methods=['GET', 'POST'])
-def ceo_login():
-    """Login do CEO"""
-    if request.method == 'POST':
-        if request.form['username'] == "Luis" and request.form['password'] == "Moni4242":
-            session['role'] = 'ceo'
-            return redirect(url_for('ceo_dashboard'))
-        flash('Credenciais inválidas', 'error')
-    return render_template('ceo_login.html')
 
 @app.route('/ceo_dashboard')
 def ceo_dashboard():
@@ -312,7 +308,7 @@ def add_employee():
         try:
             new_employee = Employee(
                 name=request.form['name'],
-                weekly_goal=int(request.form.get('weekly_goal', 800)),
+                weekly_goal=int(request.form.get('weekly_goal', 2375)),
                 access_key=request.form['access_key']
             )
             db.session.add(new_employee)
@@ -324,6 +320,7 @@ def add_employee():
             flash('Erro ao adicionar funcionário', 'error')
     
     return render_template('add_employee.html')
+
 
 @app.route('/delete_all_entries', methods=['POST'])
 def delete_all_entries():
