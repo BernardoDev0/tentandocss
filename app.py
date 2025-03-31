@@ -41,7 +41,7 @@ timezone = pytz.timezone('America/Sao_Paulo')
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    weekly_goal = db.Column(db.Integer, default=2375)
+    monthly_goal = db.Column(db.Integer, default=9500)  # Agora é meta mensal
     access_key = db.Column(db.String(50), unique=True, nullable=False)
     entries = db.relationship('Entry', backref='employee', lazy=True)
 
@@ -63,9 +63,9 @@ def init_db():
 def create_initial_employees():
     """Cria os funcionários iniciais se não existirem"""
     employees = [
-        {'name': 'Rodrigo', 'weekly_goal': 2375, 'access_key': 'rodrigo123'},
-        {'name': 'Maurício', 'weekly_goal': 2375, 'access_key': 'mauricio123'},
-        {'name': 'Matheus', 'weekly_goal': 2375, 'access_key': 'matheus123'}
+        {'name': 'Rodrigo', 'monthly_goal': 9500, 'access_key': 'rodrigo123'},
+        {'name': 'Maurício', 'monthly_goal': 9500, 'access_key': 'mauricio123'},
+        {'name': 'Matheus', 'monthly_goal': 9500, 'access_key': 'matheus123'}
     ]
     
     for emp in employees:
@@ -137,13 +137,13 @@ def export_weekly_reports():
                 total_points = df['Pontos'].sum()
                 remaining_points = max(0, employee.weekly_goal - total_points)
                 
-                progress_row = {
+                total_points = df['Pontos'].sum()
+                remaining_points = max(0, employee.monthly_goal - total_points)  # Agora mensal
+                df = df._append({
                     'Data': 'Total',
-                    'Refinaria': '',
                     'Pontos': total_points,
-                    'Observações': f'Restante: {remaining_points}'
-                }
-                df = df._append(progress_row, ignore_index=True)
+                    'Observações': f'Restante: {remaining_points} ({(remaining_points/employee.monthly_goal*100)|round}%)'
+                }, ignore_index=True)
                 
                 excel_file = BytesIO()
                 with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
