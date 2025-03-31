@@ -5,20 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitorar Cadastro</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='moni.ico') }}">
     <style>
-        /* ESTILO SIMPLES E FUNCIONAL */
         .container {
             text-align: center;
-            margin-top: 20vh; /* Centraliza verticalmente */
+            margin-top: 10vh;
+        }
+        .logo {
+            width: 80px; /* Tamanho ajustável */
+            margin-bottom: 20px;
         }
         .btn-login {
-            padding: 15px 30px;
-            font-size: 18px;
+            padding: 12px 30px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Ícone adicionado aqui -->
+        <img src="{{ url_for('static', filename='moni.ico') }}" alt="Logo Monitorar" class="logo">
         <h1>Monitorar Cadastro</h1>
         <a href="{{ url_for('login') }}" class="btn btn-login">Login</a>
     </div>
