@@ -41,7 +41,7 @@ timezone = pytz.timezone('America/Sao_Paulo')
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    monthly_goal = db.Column(db.Integer, default=9500)  # Agora é meta mensal
+    weekly_goal = db.Column(db.Integer, default=2375)
     access_key = db.Column(db.String(50), unique=True, nullable=False)
     entries = db.relationship('Entry', backref='employee', lazy=True)
 
@@ -57,15 +57,16 @@ class Entry(db.Model):
 def init_db():
     """Inicializa o banco de dados"""
     with app.app_context():
+        db.drop_all()
         db.create_all()
         create_initial_employees()
 
 def create_initial_employees():
-    """Cria os funcionários iniciais se não existirem"""
+    """Cria os funcionários iniciais"""
     employees = [
-        {'name': 'Rodrigo', 'monthly_goal': 9500, 'access_key': 'rodrigo123'},
-        {'name': 'Maurício', 'monthly_goal': 9500, 'access_key': 'mauricio123'},
-        {'name': 'Matheus', 'monthly_goal': 9500, 'access_key': 'matheus123'}
+        {'name': 'Rodrigo', 'weekly_goal': 2375, 'access_key': 'rodrigo123'},
+        {'name': 'Maurício', 'weekly_goal': 2375, 'access_key': 'mauricio123'},
+        {'name': 'Matheus', 'weekly_goal': 2375, 'access_key': 'matheus123'}
     ]
     
     for emp in employees:
@@ -137,13 +138,13 @@ def export_weekly_reports():
                 total_points = df['Pontos'].sum()
                 remaining_points = max(0, employee.weekly_goal - total_points)
                 
-                total_points = df['Pontos'].sum()
-                remaining_points = max(0, employee.monthly_goal - total_points)  # Agora mensal
-                df = df._append({
+                progress_row = {
                     'Data': 'Total',
+                    'Refinaria': '',
                     'Pontos': total_points,
-                    'Observações': f'Restante: {remaining_points} ({(remaining_points/employee.monthly_goal*100)|round}%)'
-                }, ignore_index=True)
+                    'Observações': f'Restante: {remaining_points}'
+                }
+                df = df._append(progress_row, ignore_index=True)
                 
                 excel_file = BytesIO()
                 with pd.ExcelWriter(excel_file, engine='xlsxwriter') as writer:
@@ -173,22 +174,17 @@ def export_weekly_reports():
     return send_file(zip_buffer, as_attachment=True, download_name='relatorios_funcionarios.zip', mimetype='application/zip')
 
 # Rotas
-@app.before_first_request
-def reset_db():
-    db.drop_all()
-    db.create_all()
-    create_initial_employees()
-    
 @app.route('/')
 def index():
-    """Página inicial com opções de login"""
+    """Página inicial"""
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Login único para todos os usuários"""
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
         
         # Verifica se é CEO
         if username == "Luis" and password == "Moni4242":
@@ -196,15 +192,15 @@ def login():
             return redirect(url_for('ceo_dashboard'))
         
         # Verifica se é funcionário
-        employee = Employee.query.filter_by(name=username, access_key=password).first()
-        if employee:
+        employee = Employee.query.filter_by(access_key=password).first()
+        if employee and employee.name.lower() == username.lower():
             session['role'] = 'employee'
             session['employee_id'] = employee.id
             return redirect(url_for('employee_dashboard'))
         
         flash('Usuário ou senha inválidos', 'error')
     
-    return render_template('login.html')  # Template único
+    return render_template('login.html')
 
 @app.route('/employee_dashboard', methods=['GET', 'POST'])
 def employee_dashboard():
@@ -216,7 +212,6 @@ def employee_dashboard():
     
     if request.method == 'POST':
         try:
-            # Verifica se os pontos são um número válido
             points = int(request.form['points'])
             if points < 0:
                 raise ValueError("Pontos não podem ser negativos")
@@ -290,7 +285,6 @@ def delete_entry(entry_id):
     
     return redirect(url_for('employee_dashboard'))
 
-
 @app.route('/ceo_dashboard')
 def ceo_dashboard():
     """Painel do CEO"""
@@ -327,7 +321,6 @@ def add_employee():
     
     return render_template('add_employee.html')
 
-
 @app.route('/delete_all_entries', methods=['POST'])
 def delete_all_entries():
     """Excluir todos os registros"""
@@ -358,5 +351,7 @@ def export():
 
 # Inicialização
 if __name__ == '__main__':
-    init_db()
+    with app.app_context():
+        db.create_all()
+        create_initial_employees()
     app.run(host='0.0.0.0', debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true')
