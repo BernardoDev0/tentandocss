@@ -3,30 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitorar Cadastro</title>
+    <title>Monitorar</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='moni.ico') }}">
     <style>
-        .container {
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: var(--secondary-color); /* FUNDO ESCURO */
+        }
+        
+        .login-box {
             text-align: center;
-            margin-top: 10vh;
+            padding: 2rem;
+            background-color: var(--table-row-bg); /* CINZA ESCURO PARA O CARD */
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 300px;
         }
-        .logo {
-            width: 250px; /* Tamanho ajustável */
-            margin-bottom: 20px;
+        
+        .logo-icon {
+            width: 250px;
+            margin-bottom: 30px;
         }
+        
         .btn-login {
-            padding: 12px 30px;
-            margin-top: 20px;
+            width: 100%;
+            padding: 12px 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Ícone adicionado aqui -->
-        <img src="{{ url_for('static', filename='moni.ico') }}" alt="Logo Monitorar" class="logo">
-        <h1>Monitorar Cadastro</h1>
-        <a href="{{ url_for('login') }}" class="btn btn-login">Login</a>
+    <div class="login-container">
+        <div class="login-box">
+            <img src="{{ url_for('static', filename='moni.ico') }}" alt="Logo" class="logo-icon">
+            <a href="{{ url_for('login') }}" class="btn btn-login">Login</a>
+        </div>
     </div>
 </body>
 </html>

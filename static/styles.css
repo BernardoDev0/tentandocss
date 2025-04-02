@@ -420,3 +420,171 @@ button.delete-all-button:hover {
     margin-right: 0;
   }
 }
+/* Progress Bar Styles */
+.progress-container {
+  margin: 2rem 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.employee-progress {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--table-row-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.employee-progress:last-child {
+  border-bottom: none;
+}
+
+.employee-name {
+  width: 25%;
+  font-weight: 600;
+}
+
+.progress-bar-container {
+  width: 50%;
+  height: 25px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 0 1rem;
+}
+
+.progress-bar {
+  background-color: var(--primary-color); /* Default color */
+  min-width: 5%; /* Ensure it's always visible even at 0% */
+}
+
+.progress-green {
+  background-color: var(--success-color) !important;
+}
+
+.progress-orange {
+  background-color: var(--warning-color) !important;
+}
+
+.progress-red {
+  background-color: var(--danger-color) !important;
+}
+
+.progress-text {
+  width: 25%;
+  text-align: right;
+  white-space: nowrap;
+}
+/* Controles */
+.controls {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.week-selector form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.week-btn {
+  padding: 0.5rem 1rem;
+  background: var(--table-row-bg);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.week-btn.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.employee-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Resumo */
+.summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  flex: 1;
+  background: var(--table-row-bg);
+  padding: 1rem;
+  border-radius: var(--radius);
+}
+
+.summary-card h3 {
+  margin-bottom: 0.5rem;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+.summary-card .value {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Progresso */
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.progress-percentage {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+/* Ações */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+@media (max-width: 768px) {
+  .employee-progress {
+      flex-direction: column;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      background-color: var(--table-row-bg);
+      border-radius: var(--radius);
+  }
+  
+  .progress-bar-container {
+      width: 100% !important;
+      margin: 0.5rem 0 !important;
+  }
+  
+  .progress-info {
+      flex-direction: column;
+      gap: 0.3rem;
+  }
+  
+  table {
+      font-size: 0.8rem;
+  }
+  
+  .week-selector form {
+      flex-wrap: wrap;
+  }
+  
+  .week-btn {
+      padding: 0.3rem 0.6rem;
+      margin-bottom: 0.3rem;
+  }
+}
