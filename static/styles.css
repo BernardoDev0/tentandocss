@@ -421,6 +421,7 @@ button.delete-all-button:hover {
   }
 }
 /* Progress Bar Styles */
+/* Progress Bar Styles - Versão Corrigida */
 .progress-container {
   margin: 2rem 0;
   border-radius: var(--radius);
@@ -434,19 +435,25 @@ button.delete-all-button:hover {
   padding: 1rem;
   background-color: var(--table-row-bg);
   border-bottom: 1px solid var(--border-color);
-}
-
-.employee-progress:last-child {
-  border-bottom: none;
+  gap: 1rem; /* Espaço entre elementos */
 }
 
 .employee-name {
-  width: 25%;
+  width: 20%;
+  min-width: 120px;
   font-weight: 600;
 }
 
+.progress-info {
+  width: 25%;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
 .progress-bar-container {
-  width: 50%;
+  flex-grow: 1;
   height: 25px;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
@@ -455,20 +462,22 @@ button.delete-all-button:hover {
 }
 
 .progress-bar {
-  min-height: 100%;
-  display: block;
+  height: 100%;
+  min-width: 2%;
+  transition: width 0.3s ease;
 }
 
-.progress-green {
-  background-color: var(--success-color) !important;
-}
+/* Cores Únicas (sem duplicação) */
+.progress-green { background-color: var(--success-color); }
+.progress-orange { background-color: var(--warning-color); }
+.progress-red { background-color: var(--danger-color); }
 
-.progress-orange {
-  background-color: var(--warning-color) !important;
-}
-
-.progress-red {
-  background-color: var(--danger-color) !important;
+.progress-percentage {
+  width: 20%;
+  min-width: 150px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: var(--text-light);
 }
 
 .progress-text {
@@ -534,19 +543,6 @@ button.delete-all-button:hover {
   font-weight: bold;
 }
 
-/* Progresso */
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.progress-percentage {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--text-light);
-}
 
 /* Ações */
 .actions {

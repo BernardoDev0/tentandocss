@@ -126,8 +126,7 @@
             <a href="{{ url_for('export') }}?week={{ selected_week }}" class="btn">
                 Exportar Excel
             </a>
-            
-            <!-- Botão Resetar Mês -->
+
             <!-- Botão Resetar Mês -->
             <form id="resetForm" method="POST" action="{{ url_for('reset_month') }}">
                 <button type="button" onclick="confirmAction('reset', 'Isso irá marcar o início de um novo mês mantendo todos os dados. Continuar?')" class="btn warning">

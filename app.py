@@ -337,16 +337,20 @@ def edit_entry(entry_id):
 @app.route('/delete_entry/<int:entry_id>', methods=['POST'])
 def delete_entry(entry_id):
     """Exclusão de registro"""
-    if 'role' not in session or session['role'] != 'employee':
+    if 'role' not in session or session['role'] != 'ceo':  # Alterado de 'employee' para 'ceo'
+        flash('Acesso não autorizado', 'error')
         return redirect(url_for('index'))
     
-    entry = Entry.query.get_or_404(entry_id)
-    if entry.employee_id == session['employee_id']:
+    try:
+        entry = Entry.query.get_or_404(entry_id)
         db.session.delete(entry)
         db.session.commit()
         flash('Registro excluído com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir registro: {str(e)}', 'error')
     
-    return redirect(url_for('employee_dashboard'))
+    return redirect(url_for('ceo_dashboard'))  # Redireciona de volta para o dashboard do CEO
 
 @app.route('/ceo_dashboard')
 def ceo_dashboard():
@@ -391,11 +395,12 @@ def ceo_dashboard():
         
         # Progresso da semana selecionada
         current_week_points = weekly_points[int(selected_week)-1]
-        weekly_percentage = (current_week_points / weekly_goal) * 100
-        monthly_percentage = (monthly_total / monthly_goal) * 100
+        weekly_percentage = min((current_week_points / weekly_goal) * 100, 100)
+        monthly_percentage = min((monthly_total / monthly_goal) * 100, 100)
         
         # Status de cor
-        status_color = "progress-green" if weekly_percentage >= 100 else "progress-orange" if weekly_percentage >= 90 else "progress-red"
+        status_color = "green" if weekly_percentage >= 100 else "orange" if weekly_percentage >= 50 else "red"
+
         
         employee_totals[employee.id] = {
             'weekly_points': weekly_points,
