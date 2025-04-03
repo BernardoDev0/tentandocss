@@ -3,10 +3,10 @@
 node_modules/
 *.log
 venv/
-__pycache__/
-*.pyc
-*.pyo
 *.pyd
-*.so
 *.dll
 *.exe
+*.so
+*.whl
+__pycache__/
+*.pyc
