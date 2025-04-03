@@ -455,8 +455,8 @@ button.delete-all-button:hover {
 }
 
 .progress-bar {
-  background-color: var(--primary-color); /* Default color */
-  min-width: 5%; /* Ensure it's always visible even at 0% */
+  min-height: 100%;
+  display: block;
 }
 
 .progress-green {

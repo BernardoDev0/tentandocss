@@ -395,7 +395,7 @@ def ceo_dashboard():
         monthly_percentage = (monthly_total / monthly_goal) * 100
         
         # Status de cor
-        status_color = "green" if weekly_percentage >= 100 else "orange" if weekly_percentage >= 90 else "red"
+        status_color = "progress-green" if weekly_percentage >= 100 else "progress-orange" if weekly_percentage >= 90 else "progress-red"
         
         employee_totals[employee.id] = {
             'weekly_points': weekly_points,
