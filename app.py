@@ -187,42 +187,30 @@ def export_weekly_reports():
 
 
 def get_current_week():
-    """Retorna a semana atual do mês (1-4) baseada em semanas de segunda a domingo"""
     today = datetime.now(timezone)
-    
-    # Encontra a primeira segunda-feira do mês
-    first_day = today.replace(day=1)
-    while first_day.weekday() != 0:  # 0 é segunda-feira
-        first_day += timedelta(days=1)
-    
-    # Se hoje for antes da primeira segunda-feira, pertence à semana 1
-    if today < first_day:
-        return 1
-    
-    # Calcula a diferença em dias desde a primeira segunda-feira
-    delta = (today - first_day).days
-    week_number = delta // 7 + 1
-    
-    return min(week_number, 4)  # Limita a 4 semanase 
+    first_day_week = today.replace(day=1).isocalendar()[1]
+    current_week = today.isocalendar()[1]
+    return min(max(current_week - first_day_week + 1, 1), 4)
 
 def get_week_from_date(date_str):
-    """Retorna a semana do mês (1-4) baseada em semanas de segunda a domingo"""
+    """
+    Retorna a semana do mês (1-4) baseada em semanas ISO (segunda a domingo).
+    Limita a 4 semanas para alinhar com metas mensais.
+    """
     date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
     
-    # Encontra a primeira segunda-feira do mês
-    first_day = date.replace(day=1)
-    while first_day.weekday() != 0:  # 0 é segunda-feira
-        first_day += timedelta(days=1)
+    # Semana ISO do primeiro dia do mês
+    first_day_week = date.replace(day=1).isocalendar()[1]
     
-    # Se a data for antes da primeira segunda-feira, pertence à semana 1
-    if date < first_day:
-        return 1
+    # Semana ISO da data atual
+    current_week = date.isocalendar()[1]
     
-    # Calcula a diferença em dias desde a primeira segunda-feira
-    delta = (date - first_day).days
-    week_number = delta // 7 + 1
+    # Calcula a diferença de semanas
+    week_number = current_week - first_day_week + 1
     
-    return min(week_number, 4)  # Limita a 4 semanas
+    # Limita a 4 semanas e garante mínimo 1
+    return min(max(week_number, 1), 4)
+
 class MonthReset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     reset_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
