@@ -43,8 +43,16 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
+ 
         <form method="POST">
+            <label for="date">Data:</label>
+            <input type="datetime-local" 
+                   id="date" 
+                   name="date" 
+                   value="{{ formatted_date }}" 
+                   required>
+            
+            <!-- Campos existentes -->
             <label for="refinery">Refinaria:</label>
             <input type="text" id="refinery" name="refinery" value="{{ entry.refinery }}" required>
             
@@ -56,6 +64,3 @@
             
             <button type="submit">Salvar Alterações</button>
         </form>
-    </div>
-</body>
-</html>

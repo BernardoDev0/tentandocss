@@ -575,12 +575,23 @@ button.delete-all-button:hover {
       font-size: 0.8rem;
   }
   
-  .week-selector form {
-      flex-wrap: wrap;
-  }
+  .week-selector {
+    display: flex;
+    flex-wrap: wrap;  <!-- Permite quebra de linha se necessário -->
+    gap: 5px;
+}
+
   
   .week-btn {
       padding: 0.3rem 0.6rem;
       margin-bottom: 0.3rem;
   }
+  
+  input[type="datetime-local"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    margin-bottom: 10px;
+}
 }

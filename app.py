@@ -39,11 +39,15 @@ timezone = pytz.timezone('America/Sao_Paulo')
 
 # Modelos do banco de dados
 class Employee(db.Model):
+    __tablename__ = 'employee'
+    
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100))  # Campo legado (pode ser removido depois)
+    real_name = db.Column(db.String(100), nullable=False)  # Nome completo
+    username = db.Column(db.String(50), unique=True, nullable=False)  # BPKT, DHSM
+    access_key = db.Column(db.String(50), nullable=False)  # Campo que armazena as senhas
     weekly_goal = db.Column(db.Integer, default=2375)
-    access_key = db.Column(db.String(50), unique=True, nullable=False)
-    default_refinery = db.Column(db.String(100))  # Nova coluna
+    default_refinery = db.Column(db.String(100))
     entries = db.relationship('Entry', backref='employee', lazy=True)
 
     @property
@@ -71,24 +75,45 @@ def init_db():
         create_initial_employees()
 
 def create_initial_employees():
-    """Cria os funcionários iniciais"""
     employees = [
-        {'name': 'Rodrigo', 'weekly_goal': 2375, 'access_key': 'rodrigo123', 'default_refinery': 'RECAP'},
-        {'name': 'Maurício', 'weekly_goal': 2375, 'access_key': 'mauricio123', 'default_refinery': 'REVAP'},
-        {'name': 'Matheus', 'weekly_goal': 2375, 'access_key': 'matheus123', 'default_refinery': 'RPBC'},
-        {'name': 'Wesley', 'weekly_goal': 2375, 'access_key': 'wesley123', 'default_refinery': 'REPLAN'}
+        {
+            'real_name': 'Rodrigo',
+            'username': 'BPKT',
+            'access_key': '0906',  # Senha
+            'default_refinery': 'RECAP'
+        },
+        {
+            'real_name': 'Maurício',
+            'username': 'DHSM',
+            'access_key': '7070',
+            'default_refinery': 'REVAP'
+        },
+        {
+            'real_name': 'Matheus',
+            'username': 'E89P',
+            'access_key': '0908',
+            'default_refinery': 'RPBC'
+        },
+        {
+            'real_name': 'Wesley',
+            'username': 'Wesley',
+            'access_key': 'wesley123',
+            'default_refinery': 'REPLAN'
+        }
     ]
     
-    for emp in employees:
-        if not Employee.query.filter_by(name=emp['name']).first():
+    for emp_data in employees:
+        if not Employee.query.filter_by(username=emp_data['username']).first():
             new_employee = Employee(
-                name=emp['name'],
-                weekly_goal=emp['weekly_goal'],
-                access_key=emp['access_key'],
-                default_refinery=emp['default_refinery']
+                real_name=emp_data['real_name'],
+                username=emp_data['username'],
+                access_key=emp_data['access_key'],
+                weekly_goal=2375,
+                default_refinery=emp_data['default_refinery']
             )
             db.session.add(new_employee)
     db.session.commit()
+
 def send_async_email(app, msg):
     """Envia email em segundo plano"""
     with app.app_context():
@@ -188,28 +213,32 @@ def export_weekly_reports():
 
 def get_current_week():
     today = datetime.now(timezone)
-    first_day_week = today.replace(day=1).isocalendar()[1]
-    current_week = today.isocalendar()[1]
-    return min(max(current_week - first_day_week + 1, 1), 4)
+    return get_week_from_date(today.strftime('%Y-%m-%d %H:%M:%S'))
 
 def get_week_from_date(date_str):
     """
-    Retorna a semana do mês (1-4) baseada em semanas ISO (segunda a domingo).
-    Limita a 4 semanas para alinhar com metas mensais.
+    Calcula a semana com base no ciclo 26/mês_atual → 25/mês_seguinte.
+    Retorna a semana atual (1 a 5).
     """
     date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
     
-    # Semana ISO do primeiro dia do mês
-    first_day_week = date.replace(day=1).isocalendar()[1]
+    # Define o início do ciclo (dia 26 do mês atual ou anterior)
+    if date.day >= 26:
+        cycle_start = date.replace(day=26)
+    else:
+        # Retrocede para o dia 26 do mês anterior
+        if date.month == 1:
+            cycle_start = date.replace(year=date.year-1, month=12, day=26)
+        else:
+            cycle_start = date.replace(month=date.month-1, day=26)
     
-    # Semana ISO da data atual
-    current_week = date.isocalendar()[1]
+    # Calcula a diferença em dias
+    delta_days = (date - cycle_start).days
     
-    # Calcula a diferença de semanas
-    week_number = current_week - first_day_week + 1
+    # Semana = (dias de diferença // 7) + 1
+    week_number = (delta_days // 7) + 1
     
-    # Limita a 4 semanas e garante mínimo 1
-    return min(max(week_number, 1), 4)
+    return min(week_number, 5)  # Limita a 5 semanas
 
 class MonthReset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -223,14 +252,8 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login único para todos os usuários"""
     if request.method == 'POST':
         try:
-            # Verifica se os campos foram preenchidos
-            if not request.form.get('usuario') or not request.form.get('senha'):
-                flash('Por favor, preencha todos os campos', 'error')
-                return redirect(url_for('login'))
-                
             username = request.form['usuario'].strip()
             password = request.form['senha'].strip()
             
@@ -241,9 +264,9 @@ def login():
                 session['user'] = username
                 return redirect(url_for('ceo_dashboard'))
             
-            # Verifica se é funcionário (com tratamento case-insensitive)
+            # Verifica funcionário (usando access_key em vez de password)
             employee = Employee.query.filter(
-                db.func.lower(Employee.name) == username.lower(),
+                Employee.username == username,
                 Employee.access_key == password
             ).first()
             
@@ -251,7 +274,7 @@ def login():
                 session.clear()
                 session['role'] = 'employee'
                 session['employee_id'] = employee.id
-                session['employee_name'] = employee.name
+                session['employee_name'] = employee.real_name  # Usando real_name para exibição
                 return redirect(url_for('employee_dashboard'))
             
             flash('Usuário ou senha inválidos', 'error')
@@ -328,22 +351,44 @@ def edit_entry(entry_id):
     if 'role' not in session or session['role'] != 'ceo':
         flash('Acesso não autorizado', 'error')
         return redirect(url_for('index'))
-    
+
     entry = Entry.query.get_or_404(entry_id)
     
     if request.method == 'POST':
         try:
+            # Captura a nova data do formulário
+            new_date_str = request.form['date']
+            new_date = datetime.strptime(new_date_str, '%Y-%m-%dT%H:%M')
+            
+            # Atualiza o registro
+            entry.date = new_date.strftime('%Y-%m-%d %H:%M:%S')
             entry.refinery = request.form['refinery']
             entry.points = int(request.form['points'])
             entry.observations = request.form['observations']
+            
             db.session.commit()
-            flash('Registro atualizado com sucesso!', 'success')
+            
+            # Limpa o cache de progresso (opcional)
+            if 'employee_totals' in session:
+                session.pop('employee_totals')
+            
+            flash('Registro atualizado e semanas recalculadas!', 'success')
             return redirect(url_for('ceo_dashboard'))
+            
+        except ValueError as e:
+            db.session.rollback()
+            flash(f'Erro na data: {str(e)}', 'error')
         except Exception as e:
             db.session.rollback()
-            flash(f'Erro ao atualizar registro: {str(e)}', 'error')
+            flash(f'Erro ao atualizar: {str(e)}', 'error')
     
-    return render_template('edit_entry.html', entry=entry)
+    # Formatação para exibição
+    entry_date = datetime.strptime(entry.date, '%Y-%m-%d %H:%M:%S')
+    formatted_date = entry_date.strftime('%Y-%m-%dT%H:%M')
+    
+    return render_template('edit_entry.html', 
+                         entry=entry, 
+                         formatted_date=formatted_date)
 
 @app.route('/delete_entry/<int:entry_id>', methods=['POST'])
 def delete_entry(entry_id):
@@ -368,8 +413,15 @@ def ceo_dashboard():
     if 'role' not in session or session['role'] != 'ceo':
         return redirect(url_for('index'))
     
+    # Obtém parâmetros da URL
     employee_id = request.args.get('employee_id')
     selected_week = request.args.get('week', str(get_current_week()))
+    
+    # Garante que a semana selecionada é válida (1-5)
+    try:
+        selected_week = min(max(int(selected_week), 1), 5)
+    except:
+        selected_week = 1
     
     # Filtros
     entries_query = Entry.query
@@ -383,43 +435,42 @@ def ceo_dashboard():
     # Cálculos
     employees = Employee.query.all()
     employee_totals = {}
-    weekly_goal = 2375
-    monthly_goal = 9500
     
-    # Obtém a data do último reset ou usa 1º dia do mês atual como padrão
+    # Obtém a data do último reset ou usa dia 26 do mês anterior como padrão
     reset_date_str = session.get('last_reset')
     if reset_date_str:
         reset_date = timezone.localize(datetime.strptime(reset_date_str, '%Y-%m-%d %H:%M:%S'))
     else:
-        reset_date = timezone.localize(datetime.now().replace(day=1, hour=0, minute=0, second=0))
+        # Se não houver reset, assume dia 26 do mês anterior
+        today = datetime.now(timezone)
+        if today.month == 1:
+            reset_date = today.replace(year=today.year-1, month=12, day=26, hour=0, minute=0, second=0)
+        else:
+            reset_date = today.replace(month=today.month-1, day=26, hour=0, minute=0, second=0)
 
     for employee in employees:
-        weekly_points = [0, 0, 0, 0]
+        weekly_points = [0, 0, 0, 0, 0]  # 5 semanas possíveis
         monthly_total = 0
         
         for entry in Entry.query.filter_by(employee_id=employee.id).all():
             entry_date = timezone.localize(datetime.strptime(entry.date, '%Y-%m-%d %H:%M:%S'))
             if entry_date >= reset_date:
                 week = get_week_from_date(entry.date)
-                weekly_points[week-1] += entry.points
-                monthly_total += entry.points
+                if 1 <= week <= 5:  # Apenas semanas válidas
+                    weekly_points[week-1] += entry.points
+                    monthly_total += entry.points
         
-        # Progresso da semana selecionada
-        current_week_points = weekly_points[int(selected_week)-1]
-        weekly_percentage = min((current_week_points / weekly_goal) * 100, 100)
-        monthly_percentage = min((monthly_total / monthly_goal) * 100, 100)
-        
-        # Status de cor
-        status_color = "green" if weekly_percentage >= 100 else "orange" if weekly_percentage >= 50 else "red"
-
+        current_week_points = weekly_points[int(selected_week)-1] if 1 <= int(selected_week) <= 5 else 0
+        weekly_percentage = (current_week_points / employee.weekly_goal) * 100 if employee.weekly_goal > 0 else 0
+        monthly_percentage = (monthly_total / employee.monthly_goal) * 100 if employee.monthly_goal > 0 else 0
         
         employee_totals[employee.id] = {
             'weekly_points': weekly_points,
             'current_week_points': current_week_points,
-            'weekly_percentage': weekly_percentage,
+            'weekly_percentage': min(weekly_percentage, 100),
             'monthly_total': monthly_total,
-            'monthly_percentage': monthly_percentage,
-            'status_color': status_color
+            'monthly_percentage': min(monthly_percentage, 100),
+            'status_color': "green" if weekly_percentage >= 100 else "orange" if weekly_percentage >= 50 else "red"
         }
     
     return render_template('ceo_dashboard.html',
@@ -428,8 +479,8 @@ def ceo_dashboard():
                          employee_totals=employee_totals,
                          selected_employee_id=employee_id,
                          selected_week=selected_week,
-                         weekly_goal=weekly_goal,
-                         monthly_goal=monthly_goal,
+                         weekly_goal=2375,  # Valor fixo
+                         monthly_goal=9500,  # Valor fixo
                          last_reset=reset_date_str)
 
 # Mantenha a rota reset_month como está
