@@ -354,26 +354,29 @@ def edit_entry(entry_id):
 
     entry = Entry.query.get_or_404(entry_id)
     
+    # Captura os parâmetros de filtro da requisição
+    selected_week = request.args.get('week', str(get_current_week()))
+    selected_employee_id = request.args.get('employee_id', '')
+    
     if request.method == 'POST':
         try:
-            # Captura a nova data do formulário
+            # Atualiza o registro
             new_date_str = request.form['date']
             new_date = datetime.strptime(new_date_str, '%Y-%m-%dT%H:%M')
             
-            # Atualiza o registro
             entry.date = new_date.strftime('%Y-%m-%d %H:%M:%S')
             entry.refinery = request.form['refinery']
             entry.points = int(request.form['points'])
             entry.observations = request.form['observations']
             
             db.session.commit()
+            flash('Registro atualizado com sucesso!', 'success')
             
-            # Limpa o cache de progresso (opcional)
-            if 'employee_totals' in session:
-                session.pop('employee_totals')
-            
-            flash('Registro atualizado e semanas recalculadas!', 'success')
-            return redirect(url_for('ceo_dashboard'))
+            # Redireciona mantendo os filtros originais
+            redirect_url = url_for('ceo_dashboard', 
+                                 week=selected_week,
+                                 employee_id=selected_employee_id)
+            return redirect(redirect_url)
             
         except ValueError as e:
             db.session.rollback()
@@ -386,9 +389,12 @@ def edit_entry(entry_id):
     entry_date = datetime.strptime(entry.date, '%Y-%m-%d %H:%M:%S')
     formatted_date = entry_date.strftime('%Y-%m-%dT%H:%M')
     
+    # Passa os parâmetros de filtro para o template
     return render_template('edit_entry.html', 
-                         entry=entry, 
-                         formatted_date=formatted_date)
+                         entry=entry,
+                         formatted_date=formatted_date,
+                         selected_week=request.args.get('week'),  # Mudei para selected_week
+                         selected_employee_id=request.args.get('employee_id')) 
 
 @app.route('/delete_entry/<int:entry_id>', methods=['POST'])
 def delete_entry(entry_id):

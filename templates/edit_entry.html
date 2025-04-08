@@ -31,7 +31,9 @@
 </head>
 <body>
     <div class="container">
-        <a href="{{ url_for('employee_dashboard') }}" class="back-button">Voltar</a>
+        <a href="{{ url_for('ceo_dashboard', week=selected_week, employee_id=selected_employee_id) if selected_week and selected_employee_id else url_for('ceo_dashboard') }}" class="btn">
+            Voltar
+        </a>
         
         <h1>Editar Registro</h1>
 
