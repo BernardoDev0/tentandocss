@@ -128,7 +128,7 @@ def send_confirmation_email(employee_name, date, points, refinery, observations)
         'Rodrigo': 'rodrigo@monitorarconsultoria.com.br',
         'Maurício': 'carlos.mauricio.prestserv@petrobras.com.br',
         'Matheus': 'Matheus.e.lima.prestserv@petrobras.com.br',
-        'Wesley' : 'Wesley_fgc@hotmail.com'
+        'Wesley' : 'Wesley_fgc@hotmail.com',
     }.get(employee_name)
     
     if recipient:
