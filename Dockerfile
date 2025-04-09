@@ -9,25 +9,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Atualiza o pip e instala wheel com root antes de mudar o usuário
+# Atualiza pip e instala wheel
 RUN pip install --upgrade pip && pip install wheel
 
 # Cria usuário não-root
 RUN useradd -m myuser
 
-# Define PATH e muda para o usuário myuser
-ENV PATH="/home/myuser/.local/bin:${PATH}"
-USER myuser
-
 # Define diretório de trabalho e copia os arquivos
 WORKDIR /app
 COPY --chown=myuser:myuser . .
 
-# Instala as dependências do projeto
-RUN pip install --no-cache-dir --user -r requirements.txt
+# ⚠️ IMPORTANTE: instala as libs AQUI ainda como root (sem --user)
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expõe a porta
+# Agora sim muda para o usuário não-root
+USER myuser
+ENV PATH="/home/myuser/.local/bin:${PATH}"
+
+# Expõe a porta usada pelo Gunicorn
 EXPOSE 5000
 
-# Comando padrão
+# Comando para rodar o app
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
