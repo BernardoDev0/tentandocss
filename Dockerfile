@@ -1,6 +1,6 @@
-FROM python:3.10-slim-bullseye@sha256:1ba0dc5e5e668f5df0947b70e38e4a9d00e1c5e2e1d0aaf7a7a1f1a1a1a1a1a1
+FROM python:3.10-slim
 
-# Instala as dependências do sistema necessárias
+# Instala dependências do sistema necessárias para compilar pacotes Python
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     build-essential \
@@ -8,14 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Atualiza o pip para a versão mais recente
-RUN pip install --upgrade pip
+# Atualiza o pip e instala o wheel (necessário para alguns pacotes)
+RUN pip install --upgrade pip && pip install wheel
 
-# Cria um usuário não-root para executar o aplicativo
+# Cria um usuário não-root para rodar o app com mais segurança
 RUN useradd -m myuser
 USER myuser
 
-# Adiciona /home/myuser/.local/bin ao PATH
+# Define o PATH para incluir os pacotes instalados localmente
 ENV PATH="/home/myuser/.local/bin:${PATH}"
 
 # Define o diretório de trabalho e copia os arquivos do projeto
@@ -25,8 +25,8 @@ COPY --chown=myuser:myuser . .
 # Instala as dependências do Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expõe a porta 5000
+# Expõe a porta usada pelo Gunicorn
 EXPOSE 5000
 
-# Define o comando para rodar o aplicativo com Gunicorn
+# Comando para iniciar o app com Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
