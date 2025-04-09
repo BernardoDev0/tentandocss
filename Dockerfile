@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-slim-bullseye@sha256:1ba0dc5e5e668f5df0947b70e38e4a9d00e1c5e2e1d0aaf7a7a1f1a1a1a1a1a1
 
 # Instala as dependências do sistema necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \
