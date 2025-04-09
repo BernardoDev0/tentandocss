@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Instala dependências do sistema necessárias
+# Instala dependências de sistema necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     build-essential \
@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Atualiza pip e instala wheel
-RUN pip install --upgrade pip && pip install wheel
+# ⚠️ Instala ferramentas completas de build do Python
+RUN pip install --upgrade pip setuptools wheel
 
 # Cria usuário não-root
 RUN useradd -m myuser
@@ -19,15 +19,15 @@ RUN useradd -m myuser
 WORKDIR /app
 COPY --chown=myuser:myuser . .
 
-# ⚠️ IMPORTANTE: instala as libs AQUI ainda como root (sem --user)
+# ⚠️ Instala as dependências (ainda como root)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Agora sim muda para o usuário não-root
+# Agora sim troca pro user seguro
 USER myuser
 ENV PATH="/home/myuser/.local/bin:${PATH}"
 
-# Expõe a porta usada pelo Gunicorn
+# Expõe a porta
 EXPOSE 5000
 
-# Comando para rodar o app
+# Comando do Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
