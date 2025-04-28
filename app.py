@@ -52,7 +52,17 @@ class Employee(db.Model):
 
     @property
     def monthly_goal(self):
-        return 9500  # Meta mensal fixa
+        # Meta mensal específica para o Matheus (E89P)
+        if self.username == 'E89P':
+            return 10500
+        return 9500  # Meta mensal padrão para os outros
+    
+    @property
+    def weekly_goal(self):
+        # Meta semanal específica para o Matheus (E89P)
+        if self.username == 'E89P':
+            return 2675
+        return 2375  # Meta semanal padrão para os outros
     
     @property
     def daily_goal(self):
@@ -299,6 +309,22 @@ def employee_dashboard():
             flash('Sessão inválida. Por favor, faça login novamente.', 'error')
             return redirect(url_for('index'))
         
+        # Cálculo dos pontos semanais e mensais
+        entries = Entry.query.filter_by(employee_id=employee.id).all()
+        
+        weekly_points = 0
+        monthly_points = 0
+        current_week = get_current_week()
+        
+        for entry in entries:
+            entry_week = get_week_from_date(entry.date)
+            if entry_week == current_week:
+                weekly_points += entry.points
+            monthly_points += entry.points
+        
+        weekly_percentage = (weekly_points / employee.weekly_goal) * 100 if employee.weekly_goal > 0 else 0
+        monthly_percentage = (monthly_points / employee.monthly_goal) * 100 if employee.monthly_goal > 0 else 0
+        
         if request.method == 'POST':
             try:
                 points = int(request.form['points'])
@@ -338,7 +364,11 @@ def employee_dashboard():
         return render_template('employee_dashboard.html', 
                             employee=employee, 
                             entries=entries,
-                            default_refinery=employee.default_refinery) 
+                            default_refinery=employee.default_refinery,
+                            weekly_points=weekly_points,
+                            monthly_points=monthly_points,
+                            weekly_percentage=weekly_percentage,
+                            monthly_percentage=monthly_percentage)
         
     except Exception as e:
         app.logger.error(f"Erro no dashboard do funcionário: {str(e)}")

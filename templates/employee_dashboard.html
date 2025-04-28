@@ -5,6 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de {{ employee.name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .progress-container {
+            margin: 20px 0;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
+        }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .progress-percentage {
+            text-align: right;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+        .progress-red {
+            background-color: #f44336;
+        }
+        .progress-orange {
+            background-color: #ff9800;
+        }
+        .progress-green {
+            background-color: #4CAF50;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -16,6 +52,23 @@
             Meta semanal: {{ employee.weekly_goal }} pontos | 
             Meta diária: {{ employee.daily_goal }} pontos
         </p>
+
+        <!-- Barra de Progresso -->
+        <div class="progress-container">
+            <div class="progress-info">
+                <div><strong>Mês:</strong> {{ monthly_points }}/{{ employee.monthly_goal }} pts</div>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar progress-{{ 'green' if weekly_percentage >= 100 else 'orange' if weekly_percentage >= 50 else 'red' }}" 
+                     style="width: {{ weekly_percentage }}%">
+                </div>
+            </div>
+            
+            <div class="progress-percentage">
+                {{ monthly_percentage|round(1) }}% do mês
+            </div>
+        </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}

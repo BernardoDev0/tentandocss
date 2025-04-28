@@ -54,10 +54,10 @@
                 
                 <div class="progress-info">
                     <div>
-                        <strong>Semana:</strong> {{ employee_totals[employee.id]['current_week_points'] }}/2375 pts
+                        <strong>Semana:</strong> {{ employee_totals[employee.id]['current_week_points'] }}/{{ employee.weekly_goal }} pts
                     </div>
                     <div>
-                        <strong>Mês:</strong> {{ employee_totals[employee.id]['monthly_total'] }}/9500 pts
+                        <strong>Mês:</strong> {{ employee_totals[employee.id]['monthly_total'] }}/{{ employee.monthly_goal }} pts
                     </div>
                 </div>
                 
