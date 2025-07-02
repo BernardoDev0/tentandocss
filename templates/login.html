@@ -1,30 +1,39 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Login - Sistema de Pontos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
     <div class="container">
-        <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
+        <a href="{{ url_for('auth.index') }}" class="btn-base back-button">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+
         <h1>Login</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="error-message">{{ messages[0][1] }}</div>
+                {% for message in messages %}
+                    <div class="alert alert-error">{{ message }}</div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
-        
-        <form method="POST">
-            <label for="username">Usuário:</label>
-            <input type="text" id="usuario" name="usuario" required>
-            
-            <label for="senha">Senha:</label>
-            <input type="password" id="senha" name="senha" required>
-            
-            <button type="submit" class="btn">Entrar</button>
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div>
+                <label for="usuario">Usuário:</label>
+                <input type="text" id="usuario" name="usuario" required>
+            </div>
+
+            <div>
+                <label for="senha">Senha:</label>
+                <input type="password" id="senha" name="senha" required>
+            </div>
+
+            <button type="submit" class="btn-base">Entrar</button>
         </form>
     </div>
 </body>

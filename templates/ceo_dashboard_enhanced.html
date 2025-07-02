@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard CEO - Sistema de Pontuação</title>
+    <!-- Critical CSS (above-the-fold) + FontAwesome básico + Overview Cards -->
+    <style>
+        :root{--primary-dark:#1e293b;--accent-blue:#3b82f6;--text-primary:#f8fafc;--text-secondary:#e2e8f0;--glass-bg-strong:rgba(15,23,42,0.95);--glass-border:rgba(148,163,184,0.2);--radius-lg:16px}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#1e293b;color:var(--text-primary);font-family:Inter,system-ui,sans-serif;line-height:1.6}
+        .container{max-width:1400px;margin:0 auto;padding:2rem;width:100%}
+        .progress-title{font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:.5rem;color:var(--text-primary)}
+        .dashboard-header{background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:24px;padding:3rem 2.5rem;margin-bottom:2rem;text-align:center}
+        .dashboard-title{font-size:2.75rem;font-weight:700;color:var(--text-primary);margin-bottom:.75rem}
+        .tabs-container{background:rgba(30,41,59,0.85);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;margin:2rem 0}
+        .fas,.fa-solid{font-family:"Font Awesome 6 Free"!important;font-weight:900!important}
+        
+        /* CRITICAL: Overview Cards CSS inline para LCP */
+        .overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem}
+        .overview-card{background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);position:relative;overflow:hidden;cursor:pointer}
+        .card-icon{width:48px;height:48px;background:transparent!important;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative}
+        .card-icon i{font-size:24px!important;color:#3b82f6!important;display:block!important;line-height:1!important}
+        .overview-value{color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2}
+        .overview-label{color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+        body,button,input,select{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+        .chart-loading-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(30,41,59,0.7);
+          z-index: 10;
+        }
+        .spinner {
+          width: 38px;
+          height: 38px;
+          border: 4px solid #3b82f6;
+          border-top: 4px solid #fff;
+          border-radius: 50%;
+          animation: spin 2.8s cubic-bezier(0.4,0,0.2,1) infinite !important;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .chart-container:not(.loading) .chart-loading-overlay {
+          display: none;
+        }
+        /* ——— Glass Style para Tabela de Registros e Botões ——— */
+        .glass-table{width:100%;border-collapse:collapse;background:rgba(30,41,59,0.35);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);overflow:hidden}
+        .glass-table th{padding:0.75rem 0.9rem;text-align:left;background:rgba(30,41,59,0.75);color:var(--text-primary);font-weight:600;font-size:0.9rem}
+        .glass-table td{padding:0.65rem 0.9rem;border-bottom:1px solid rgba(148,163,184,0.15);color:var(--text-secondary);font-size:0.85rem}
+        .glass-table tbody tr:hover{background:rgba(255,255,255,0.03)}
+        .table-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(148,163,184,0.25);color:#f1f5f9;border-radius:8px;padding:0.35rem 0.55rem;cursor:pointer;transition:background .2s,transform .15s;display:inline-flex;align-items:center;gap:4px;font-size:0.8rem}
+        .table-btn:hover{background:rgba(255,255,255,0.15);transform:scale(1.05)}
+        .table-btn i{font-size:0.85rem}
+        .glass-btn{backdrop-filter:blur(10px);border:1px solid var(--glass-border);background:rgba(30,41,59,0.6);color:var(--text-primary);padding:0.6rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;display:inline-flex;align-items:center;gap:6px;transition:background .25s,transform .15s}
+        .glass-btn:hover{background:rgba(30,41,59,0.8);transform:translateY(-2px)}
+    </style>
+    <!-- CSS não-crítico carregado de forma não bloqueante -->
+    <link rel="preload" as="style" href="{{ url_for('static', filename='css/app.css') }}" onload="this.onload=null;this.rel='stylesheet';" importance="low">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></noscript>
+    <!-- FontAwesome carregado de forma assíncrona após LCP -->
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <!-- Favicon inline para evitar 404 -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+    <!-- Linha adicionada: preconnect para CDNs -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+</head>
+<body>
+    <!-- Revelar conteúdo principal apenas após o DOM estar pronto -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const root = document.getElementById('app-root');
+            if (root) {
+                root.hidden = false;
+            }
+        });
+    </script>
+
+    {% if not header_only %}
+    <main id="app-root" hidden>
+    <div class="container">
+        <!-- Header do Dashboard -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">
+                <i class="fas fa-chart-line"></i>
+                Dashboard CEO
+            </h1>
+            <p class="dashboard-subtitle">Visão geral da performance da equipe</p>
+        </div>
+
+        <!-- Container das Abas -->
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-button active" data-tab="team-tab">
+                    <i class="fas fa-users"></i>
+                    Equipe
+                </button>
+                <button class="tab-button" data-tab="charts-tab">
+                    <i class="fas fa-chart-bar"></i>
+                    Gráficos
+                </button>
+                <button class="tab-button" data-tab="records-tab">
+                    <i class="fas fa-table"></i>
+                    Registros
+                </button>
+            </div>
+
+            <!-- Tab da Equipe -->
+            <div class="tab-content active" id="team-tab">
+                <!-- Visão geral da equipe -->
+                <!-- Corrigir TODOS os 4 cards: -->
+                <div class="overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem">
+                    <div class="overview-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px">
+                        <div class="card-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                            <span style="font-size:24px;">📈</span>
+                        </div>
+                        <div class="overview-value" style="color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2">{{ total_points if total_points is defined else 0 }}</div>
+                        <div class="overview-label" style="color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Total de Pontos desta Semana</div>
+                    </div>
+                    
+                    <div class="overview-card" id="monthly-total-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px;position:relative">
+                        <div class="card-icon" id="monthly-total-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                            <span id="monthly-total-emoji" style="font-size:24px;">🎯</span>
+                        </div>
+                        <button id="toggle-points-reais" title="Alternar pontos/reais" style="position:absolute;top:18px;right:18px;background:rgba(30,41,59,0.7);border:none;border-radius:8px;padding:4px 10px;color:#fff;cursor:pointer;font-size:1rem;transition:background 0.2s;z-index:2;display:flex;align-items:center;gap:4px"><i class="fas fa-sync-alt"></i> <span id="toggle-label">💸</span></button>
+                        <div id="monthly-total-value" class="overview-value" style="color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2;transition:color 0.3s, opacity 0.4s cubic-bezier(.4,0,.2,1);opacity:1;will-change:opacity,color;">{{ "{:,.0f}".format(monthly_team_total) if monthly_team_total is defined else 0 }}</div>
+                        <div id="monthly-total-label" class="overview-label" style="color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Pontos Mensais Totais</div>
+                    </div>
+                    
+                    <div class="overview-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px">
+                        <div class="card-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                            <span style="font-size:24px;">📊</span>
+                        </div>
+                        <div class="overview-value" style="color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2">{{ "%.1f"|format(team_average_percentage if team_average_percentage is defined else 0) }}%</div>
+                        <div class="overview-label" style="color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Progresso da Equipe</div>
+                    </div>
+                </div>
+
+                <!-- Progresso da equipe -->
+                <div class="team-progress-section" style="background:rgba(30,41,59,0.85);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:1.5rem;margin:1.5rem 0">
+                    <div class="progress-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+                        <h2 class="progress-title" style="font-size:1.25rem;font-weight:600;color:#f8fafc;display:flex;align-items:center;gap:0.5rem">
+                            <span style="font-size:24px;">📊</span>
+                            Progresso Geral da Equipe - Mensal
+                        </h2>
+                        <div class="progress-stats" style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
+                            {% set monthly_team_total = employee_totals.values() | map(attribute='monthly_points') | sum %}
+                            {% set monthly_team_target = (employees|length - 1) * 9500 + 10500 %}
+                            {% set monthly_team_percentage = (monthly_team_total / monthly_team_target * 100) if monthly_team_target > 0 else 0 %}
+                            <span style="color:#94a3b8;font-size:0.9rem"><strong>{{ monthly_team_total }}</strong> de <strong>{{ monthly_team_target }}</strong> pontos</span>
+                            <span class="{% if monthly_team_percentage >= 80 %}text-success{% elif monthly_team_percentage >= 60 %}text-warning{% else %}text-danger{% endif %}" style="font-weight:600">
+                                <strong>{{ "%.1f"|format(monthly_team_percentage) }}%</strong> concluído
+                            </span>
+                        </div>
+                    </div>
+                    <div class="team-progress-bar" style="background:#334155;border-radius:16px;height:12px;overflow:hidden;position:relative">
+                        <div class="team-progress-fill" style="height:100%;background:linear-gradient(135deg,#10b981 0%,#06b6d4 100%);border-radius:16px;transition:width 0.6s ease;position:relative;width:{{ monthly_team_percentage if monthly_team_percentage <= 100 else 100 }}%">
+                            <div class="progress-shine"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seletor de Semana -->
+                <div class="week-selector">
+                    <label for="week-select">Selecionar Semana:</label>
+                    <select id="week-select">
+                        {% for week_num in range(1, 6) %}
+                            <option value="{{ week_num }}" {% if week_num == (selected_week | int) %}selected{% endif %}>
+                                Semana {{ week_num }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Grid de Funcionários detalhado -->
+                <div class="employees-grid">
+                  {% for emp in employees %}
+                    {% set totals = employee_totals[emp.real_name] %}
+                    <div class="employee-card">
+                      <div class="employee-header">
+                        <div class="employee-avatar">{{ emp.real_name[0] }}</div>
+                        <div class="employee-info">
+                          <h3>{{ emp.real_name }}</h3>
+                          <p>Funcionário</p>
+                        </div>
+                        <div class="employee-status">
+                          {% if totals.status == 'success' %}
+                            <span class="status-badge status-success"><i class="fas fa-check-circle"></i> No ritmo</span>
+                          {% elif totals.status == 'warning' %}
+                            <span class="status-badge status-warning"><i class="fas fa-hourglass-half"></i> Quase lá</span>
+                          {% else %}
+                            <span class="status-badge status-danger"><i class="fas fa-exclamation-triangle"></i> Abaixo da Meta</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="employee-stats">
+                        <div class="stats-section">
+                          <h4><i class="fas fa-calendar-week"></i> SEMANAL</h4>
+                          <div class="stat-item"><i class="fas fa-star stat-icon"></i> <span class="stat-value">{{ totals.weekly_points | default(0) }}</span> <span class="stat-label">Pontos Desta Semana</span></div>
+                          <div class="stat-item"><i class="fas fa-bullseye stat-icon"></i> <span class="stat-value">{{ totals.weekly_goal | default(1) }}</span> <span class="stat-label">Meta Semanal</span></div>
+                          <div class="stat-item"><i class="fas fa-chart-line stat-icon"></i> <span class="stat-value">{{ ((totals.weekly_points | default(0)) / (totals.weekly_goal | default(1)) * 100) | round(1) }}%</span> <span class="stat-label">Progresso Semanal</span></div>
+                        </div>
+                        <div class="stats-section">
+                          <h4><i class="fas fa-calendar-alt"></i> MENSAL</h4>
+                          <div class="stat-item"><i class="fas fa-star stat-icon"></i> <span class="stat-value">{{ totals.monthly_points | default(0) }}</span> <span class="stat-label">Pontos Mensais</span></div>
+                          <div class="stat-item"><i class="fas fa-bullseye stat-icon"></i> <span class="stat-value">{{ totals.monthly_goal | default(1) }}</span> <span class="stat-label">Meta Mensal</span></div>
+                          <div class="stat-item"><i class="fas fa-chart-line stat-icon"></i> <span class="stat-value">{{ ((totals.monthly_points | default(0)) / (totals.monthly_goal | default(1)) * 100) | round(1) }}%</span> <span class="stat-label">Progresso Mensal</span></div>
+                        </div>
+                      </div>
+                      <div class="employee-progress">
+                        <div class="employee-progress-label">
+                          <span>Progresso Semanal</span>
+                          <span>{{ totals.weekly_points | default(0) }} / {{ totals.weekly_goal | default(1) }}</span>
+                        </div>
+                        <div class="employee-progress-bar">
+                          <div class="employee-progress-fill" style="width: {{ ((totals.weekly_points | default(0)) / (totals.weekly_goal | default(1)) * 100) }}%;"></div>
+                        </div>
+                        {% if (totals.weekly_points | default(0)) < (totals.weekly_goal | default(1)) %}
+                        <div class="progress-info text-info">
+                          <i class="fas fa-rocket"></i> Vamos lá! Ainda há {{ (100 - ((totals.weekly_points | default(0)) / (totals.weekly_goal | default(1)) * 100)) | round(1) }}% para a meta
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+
+                <!-- Fim do grid detalhado -->
+            </div>
+            
+            <!-- Tab dos Gráficos -->
+            <div class="tab-content" id="charts-tab">
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Progresso Semanal</h3>
+                            <button class="toggle-meta-btn" id="toggle-weekly-meta">
+                                <i class="fas fa-eye"></i> Meta
+                            </button>
+                        </div>
+                        <div class="chart-container loading">
+                            <div class="chart-loading-overlay">
+                              <div class="spinner"></div>
+                            </div>
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Progresso Mensal</h3>
+                            <button class="toggle-meta-btn" id="toggle-monthly-meta">
+                                <i class="fas fa-eye"></i> Meta
+                            </button>
+                        </div>
+                        <div class="chart-container loading">
+                            <div class="chart-loading-overlay">
+                              <div class="spinner"></div>
+                            </div>
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Progresso Diário</h3>
+                            <button class="toggle-meta-btn" id="toggle-daily-meta">
+                                <i class="fas fa-eye"></i> Meta
+                            </button>
+                        </div>
+                        <div class="chart-container loading">
+                            <div class="chart-loading-overlay">
+                              <div class="spinner"></div>
+                            </div>
+                            <canvas id="dailyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab de Registros -->
+            <div class="tab-content" id="records-tab">
+                <div class="week-selector" style="margin-bottom:1rem">
+                    <label for="records-week-select">Semana:</label>
+                    <select id="records-week-select">
+                        {% for w in range(1,6) %}
+                        <option value="{{ w }}">Semana {{ w }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="records-card" style="background:rgba(15,23,42,0.9);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:1rem;overflow:auto">
+                    <table id="records-table" class="glass-table">
+                        <thead>
+                            <tr style="background:rgba(30,41,59,0.85)">
+                                <th>Data</th>
+                                <th>Funcionário</th>
+                                <th>Refinaria</th>
+                                <th>Pontos</th>
+                                <th>Observações</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem">
+                    <button id="btn-delete-all" class="glass-btn" style="background:#ef4444"><i class="fas fa-trash"></i> Excluir Tudo</button>
+                    <button id="btn-export-excel" class="glass-btn" style="background:#3b82f6"><i class="fas fa-file-excel"></i> Exportar Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholders vazios – serão populados via fetch antes de inicializar gráficos -->
+    <div id="weekly-data" style="display:none"></div>
+    <div id="monthly-data" style="display:none"></div>
+    <div id="daily-data" style="display:none"></div>
+    </main>
+    {% endif %}
+
+    <!-- Scripts não-bloqueantes no final -->
+    <script defer>
+    // Definir updateWeek primeiro
+    function updateWeek() {
+        const select = document.getElementById('week-select');
+        if (select) {
+            window.location.replace('{{ url_for("dashboard.ceo_dashboard_enhanced") }}?week=' + select.value);
+        }
+    }
+    
+    // Lazy-load Chart.js & dados via fetch
+    (function(){
+      const chartTabBtn=document.querySelector('[data-tab="charts-tab"]');
+      function loadCharts(){
+        if(window.__chartsLoaded) return;
+        const libs=[
+          'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+          'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js',
+          'https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js'
+        ];
+        function loadScriptsSequentially(scripts, callback) {
+          if (!scripts.length) return callback();
+          const src = scripts.shift();
+          const s = document.createElement('script');
+          s.src = src;
+          // Forçar script clássico para Chart.js (não como module)
+          if(src.includes('chart.js')) s.type = 'text/javascript';
+          s.onload = () => {
+            // Compatibilidade: garantir que o plugin annotation esteja em window.chartjsPluginAnnotation
+            if(src.includes('chartjs-plugin-annotation') && window['chartjs-plugin-annotation']){
+              window.chartjsPluginAnnotation = window['chartjs-plugin-annotation'];
+            }
+            loadScriptsSequentially(scripts, callback);
+          };
+          document.body.appendChild(s);
+        }
+        loadScriptsSequentially([...libs], () => {
+          // Após libs, carregar script principal
+          const sMain=document.createElement('script');
+          sMain.src="{{ url_for('static', filename='ceo_dashboard.js') }}";
+          sMain.onload = () => {
+            // Buscar dados JSON e popular placeholders
+            Promise.all([
+              fetch('/api/weekly_data').then(r=>r.json()),
+              fetch('/api/monthly_data').then(r=>r.json()),
+              fetch('/api/daily_data').then(r=>r.json())
+            ]).then(([w,m,d])=>{
+                document.getElementById('weekly-data').textContent=JSON.stringify(w);
+                document.getElementById('monthly-data').textContent=JSON.stringify(m);
+                document.getElementById('daily-data').textContent=JSON.stringify(d);
+                // Esperar instância ser registrada
+                const waitInst=setInterval(()=>{
+                    if(window.dashboardInstance){
+                       window.dashboardInstance.initializeBasicCharts();
+                       clearInterval(waitInst);
+                    }
+                },50);
+            });
+          };
+          document.body.appendChild(sMain);
+        });
+        window.__chartsLoaded=true;
+      }
+      if(chartTabBtn){
+        chartTabBtn.addEventListener('click',loadCharts,{once:true});
+      }
+      // NOVO: Carregar gráficos imediatamente se a aba já estiver ativa ao carregar
+      document.addEventListener('DOMContentLoaded',function(){
+        const chartsTab=document.getElementById('charts-tab');
+        if(chartsTab && chartsTab.classList.contains('active')){
+          loadCharts();
+        }
+      });
+    })();
+
+    // Tabs functionality - sem DOMContentLoaded para render imediato
+    (function(){
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+        
+        // Adicionar onChange ao select
+        const weekSelect = document.getElementById('week-select');
+        if (weekSelect) {
+            weekSelect.addEventListener('change', updateWeek);
+        }
+    })();
+
+    // Remover loading quando o gráfico for renderizado
+    function removeChartLoading(chartId) {
+      var container = document.getElementById(chartId).closest('.chart-container');
+      if(container) container.classList.remove('loading');
+    }
+
+    // Toggle Pontos/Reais com animação moderna e cor verde para reais
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('toggle-points-reais');
+      const valueEl = document.getElementById('monthly-total-value');
+      const labelEl = document.getElementById('monthly-total-label');
+      const toggleLabel = document.getElementById('toggle-label');
+      const emojiEl = document.getElementById('monthly-total-emoji');
+      if (!btn || !valueEl || !labelEl || !toggleLabel || !emojiEl) return;
+      let showingReais = false;
+      const pontos = parseInt((valueEl.textContent || '').replace(/[^0-9]/g, ''));
+      function animateNumberModern(from, to, cb) {
+        const duration = 900;
+        const start = performance.now();
+        function frame(now) {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(2, -10 * progress);
+          const val = Math.round(from + (to - from) * eased);
+          cb(val.toLocaleString('pt-BR'));
+          if (progress < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+      function modernFadeValue(prefix = '', color = '#f8fafc') {
+        valueEl.style.transition = 'color 0.3s, opacity 0.3s, transform 0.4s cubic-bezier(.4,0,.2,1)';
+        valueEl.style.opacity = 0;
+        valueEl.style.transform = 'translateY(-10px) scale(0.8)';
+        setTimeout(() => {
+          valueEl.style.color = color;
+          const fromVal = parseInt((valueEl.textContent || '').replace(/[^0-9]/g, ''));
+          animateNumberModern(fromVal, pontos, v => {
+            valueEl.innerHTML = prefix + v;
+          });
+          // Trigger fade/scale in
+          requestAnimationFrame(() => {
+            valueEl.style.opacity = 1;
+            valueEl.style.transform = 'translateY(0) scale(1)';
+          });
+        }, 200);
+      }
+      btn.addEventListener('click', function() {
+        if (!showingReais) {
+          // Pontos → Reais
+          emojiEl.textContent = '💸';
+          modernFadeValue('R$ ', '#22c55e'); // verde
+          labelEl.textContent = 'VALOR MENSAL EM REAIS';
+          toggleLabel.textContent = '🎯';
+        } else {
+          // Reais → Pontos
+          emojiEl.textContent = '🎯';
+          modernFadeValue('', '#f8fafc');
+          labelEl.textContent = 'PONTOS MENSAIS TOTAIS';
+          toggleLabel.textContent = '💸';
+        }
+        showingReais = !showingReais;
+      });
+    });
+
+    // --- JS Registros ---
+    (function(){
+        const weekSelect=document.getElementById('records-week-select');
+        const tbody=document.querySelector('#records-table tbody');
+        const delAllBtn=document.getElementById('btn-delete-all');
+        const exportBtn=document.getElementById('btn-export-excel');
+        if(!weekSelect||!tbody) return;
+        async function loadRecords(){
+            tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem">Carregando...</td></tr>';
+            const week=weekSelect.value;
+            const res=await fetch(`/api/entries?week=${week}`);
+            if(!res.ok){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#f87171;padding:1rem">Erro ao carregar</td></tr>';return;}
+            const data=await res.json();
+            tbody.innerHTML='';
+            if(data.entries&&data.entries.length){
+                data.entries.forEach(e=>{
+                    const tr=document.createElement('tr');
+                    tr.innerHTML=`<td>${e.date}</td><td>${e.employee}</td><td>${e.refinery}</td><td>${e.points}</td><td>${e.observations||''}</td><td><button data-id="${e.id}" class="table-btn edit-btn" title="Editar"><i class="fas fa-pen"></i></button> <button data-id="${e.id}" class="table-btn delete-btn" title="Excluir"><i class="fas fa-trash"></i></button></td>`;
+                    tbody.appendChild(tr);
+                });
+            }else{
+                tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem">Nenhum registro</td></tr>';
+            }
+        }
+        weekSelect.addEventListener('change',loadRecords);
+        document.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('.delete-btn');
+            const editBtn = e.target.closest('.edit-btn');
+
+            if (deleteBtn) {
+                const id = deleteBtn.dataset.id;
+                if (confirm('Excluir este registro?')) {
+                    await fetch(`/api/delete_entry/${id}`, { method: 'POST' });
+                    loadRecords();
+                }
+            }
+
+            if (editBtn) {
+                const id = editBtn.dataset.id;
+                window.location.href = `/edit_entry/${id}`;
+            }
+        });
+        delAllBtn?.addEventListener('click',async()=>{
+            if(confirm('Excluir TODOS os registros?')){
+                await fetch('/api/delete_all_entries',{method:'POST'});
+                loadRecords();
+            }
+        });
+        exportBtn?.addEventListener('click',()=>{
+            window.location.href='/api/export';
+        });
+        // Carregar inicial
+        loadRecords();
+    })();
+    </script>
+
+    <!-- LCP Debug - defer para não bloquear -->
+    <script defer>
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        new PerformanceObserver(function(list) {
+          const entries = list.getEntries();
+          const lastEntry = entries[entries.length - 1];
+          if (lastEntry) {
+            console.log('🔍 LCP Element:', lastEntry.element);
+            console.log('🔍 LCP Value:', lastEntry.renderTime || lastEntry.loadTime);
+            console.log('🔍 LCP Size:', lastEntry.size);
+          }
+        }).observe({type: 'largest-contentful-paint', buffered: true});
+      }, 1000);
+    }); 
+    </script>
+
+    <!-- Script de teste para depuração -->
+    <!-- Importar Chart.js e plugin antes do ceo_dashboard.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="{{ url_for('static', filename='ceo_dashboard.js') }}"></script>
+</body>
+</html>

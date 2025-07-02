@@ -1,46 +1,20 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitorar</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .login-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: var(--secondary-color); /* FUNDO ESCURO */
-        }
-        
-        .login-box {
-            text-align: center;
-            padding: 2rem;
-            background-color: var(--table-row-bg); /* CINZA ESCURO PARA O CARD */
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-lg);
-            width: 90%;
-            max-width: 300px;
-        }
-        
-        .logo-icon {
-            width: 250px;
-            margin-bottom: 30px;
-        }
-        
-        .btn-login {
-            width: 100%;
-            padding: 12px 0;
-        }
-    </style>
+    <title>Sistema de Pontos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bundle.min.css') }}">
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-box">
-            <img src="{{ url_for('static', filename='moni.ico') }}" alt="Logo" class="logo-icon">
-            <a href="{{ url_for('login') }}" class="btn btn-login">Login</a>
+    <div class="container">
+        <h1>Sistema de Pontos</h1>
+        
+        <div class="home-links">
+            <a href="{{ url_for('auth.login') }}" class="btn-base">
+                <i class="fas fa-sign-in-alt"></i>
+                Login
+            </a>
         </div>
     </div>
 </body>

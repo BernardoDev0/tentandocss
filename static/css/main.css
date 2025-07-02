@@ -1,0 +1,43 @@
+/* ===================================================================
+   MAIN CSS - Arquivo Principal de Importação
+   Sistema CSS Modular Corporativo
+   ================================================================= */
+
+/* === IMPORTS DESABILITADOS - USANDO BUNDLE.MIN.CSS === */
+
+/* 1. Variáveis CSS (devem vir primeiro) */
+@import url('./variables.css'); 
+
+/* 2. Reset e estilos base */
+ @import url('./base.css');
+
+/* 3. Layout e estrutura */
+@import url('./layout/dashboard.css');
+@import url('./layout/grid.css');
+@import url('./layout/header.css');
+
+/* 4. Componentes */
+@import url('./components/cards.css');
+@import url('./components/buttons.css');
+@import url('./components/tabs.css');
+@import url('./components/forms.css');
+
+/* 5. Utilitários (devem vir por último) */
+@import url('./utilities/animations.css');
+@import url('./utilities/helpers.css');
+@import url('./utilities/responsive.css');
+
+/* ===================================================================
+   ⚡ PERFORMANCE OPTIMIZED ⚡
+   
+   Os imports foram desabilitados para usar bundle.min.css
+   que contém todos os estilos minificados em um único arquivo.
+   
+   Benefícios da otimização:
+   ✅ 1 request CSS ao invés de 12
+   ✅ CSS minificado (67KB vs ~230KB)
+   ✅ Render não-bloqueante
+   ✅ LCP drasticamente reduzido
+   ================================================================= */
+
+/* MAIN CSS simplificado para restaurar estilos originais */

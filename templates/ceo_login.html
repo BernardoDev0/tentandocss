@@ -4,31 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CEO Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .back-button {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .back-button:hover {
-            background-color: #0056b3;
-        }
-        .error {
-            color: red;
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
     <div class="container">
         <!-- Botão de Voltar -->
-        <a href="{{ url_for('index') }}" class="back-button">Voltar</a>
+        <a href="{{ url_for('auth.index') }}" class="back-button">Voltar</a>
 
         <h1>CEO Login</h1>
 

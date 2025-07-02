@@ -1,0 +1,111 @@
+/* ===================================================================
+   BUTTONS COMPONENT - Sistema de Botões Corporativo
+   ================================================================= */
+
+/* === BOTÃO BASE === */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 
+    all var(--duration-normal) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-gentle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* === EFEITO RIPPLE === */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: 
+    width var(--duration-slow) var(--ease-elastic),
+    height var(--duration-slow) var(--ease-elastic);
+  pointer-events: none;
+}
+
+/* === ESTADOS HOVER E ACTIVE === */
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: none !important;
+}
+
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--duration-instant);
+}
+
+/* === VARIANTES DE BOTÕES === */
+
+/* Botão Primário */
+.btn-primary {
+  background: var(--gradient-accent);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: none !important;
+}
+
+/* Botão Secundário */
+.btn-secondary {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+}
+
+.btn-secondary:hover {
+  background: var(--glass-bg-light);
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: none !important;
+}
+
+/* === OTIMIZAÇÕES PARA TOUCH === */
+@media (hover: none) and (pointer: coarse) {
+  .btn:active {
+    transform: scale(0.95);
+    transition: transform var(--duration-instant) var(--ease-gentle);
+  }
+}
+
+/* === ACESSIBILIDADE === */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition-duration: 0.01ms !important;
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+}

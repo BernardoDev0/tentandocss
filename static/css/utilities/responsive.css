@@ -1,0 +1,143 @@
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+  }
+  
+  .overview-card {
+    backdrop-filter: none;
+    background: var(--glass-bg-strong);
+  }
+  
+  .overview-card:hover {
+    transform: none !important;
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  .dashboard-header {
+    padding: 2rem 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+  
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .tab-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .employee-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .employee-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .employees-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .employee-card-enhanced {
+    max-width: none;
+    padding: 1rem;
+  }
+  
+  .stats-section {
+    padding: 0.5rem;
+  }
+  
+  .tabs-nav {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .chart-card {
+    padding: 1.5rem;
+  }
+  
+  .chart-container {
+    height: 250px;
+  }
+  
+  .employee-header {
+    gap: 0.5rem;
+  }
+  
+  .employee-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+  
+  .employee-info h3 {
+    font-size: 0.9rem;
+  }
+  
+  .status-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.75rem;
+  }
+  
+  .dashboard-header {
+    padding: 1.5rem 1rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .overview-card {
+    padding: 1.5rem;
+  }
+  
+  .card-value {
+    font-size: 2rem;
+  }
+  
+  .tabs-container {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+}
+
+/* ===== TOUCH INTERACTIONS ===== */
+@media (hover: none) and (pointer: coarse) {
+  .btn:active {
+    transform: scale(0.95);
+    transition: transform var(--duration-instant) var(--ease-gentle);
+  }
+  
+  .glass-card:active {
+    transform: scale(0.98);
+  }
+}
