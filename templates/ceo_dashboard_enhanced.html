@@ -401,13 +401,22 @@
                 document.getElementById('weekly-data').textContent=JSON.stringify(w);
                 document.getElementById('monthly-data').textContent=JSON.stringify(m);
                 document.getElementById('daily-data').textContent=JSON.stringify(d);
-                // Esperar instância ser registrada
-                const waitInst=setInterval(()=>{
-                    if(window.dashboardInstance){
-                       window.dashboardInstance.initializeBasicCharts();
-                       clearInterval(waitInst);
-                    }
-                },50);
+                // OTIMIZAÇÃO: Usar setTimeout com timeout máximo ao invés de setInterval
+                let attempts = 0;
+                const maxAttempts = 20; // Máximo 1 segundo (20 * 50ms)
+                function checkInstance() {
+                  if(window.dashboardInstance){
+                     window.dashboardInstance.initializeBasicCharts();
+                     return;
+                  }
+                  attempts++;
+                  if(attempts < maxAttempts) {
+                    setTimeout(checkInstance, 50);
+                  } else {
+                    console.warn('Dashboard instance not found after timeout');
+                  }
+                }
+                setTimeout(checkInstance, 50);
             });
           };
           document.body.appendChild(sMain);
@@ -454,7 +463,7 @@
       if(container) container.classList.remove('loading');
     }
 
-    // Toggle Pontos/Reais com animação moderna e cor verde para reais
+    // Toggle Pontos/Reais com animação otimizada
     document.addEventListener('DOMContentLoaded', function() {
       const btn = document.getElementById('toggle-points-reais');
       const valueEl = document.getElementById('monthly-total-value');
@@ -464,40 +473,69 @@
       if (!btn || !valueEl || !labelEl || !toggleLabel || !emojiEl) return;
       let showingReais = false;
       const pontos = parseInt((valueEl.textContent || '').replace(/[^0-9]/g, ''));
-      function animateNumberModern(from, to, cb) {
-        const duration = 900;
+      
+      // OTIMIZAÇÃO: Animação mais eficiente sem loops infinitos
+      function animateNumberOptimized(from, to, cb) {
+        const duration = 600; // Reduzido de 900ms
         const start = performance.now();
+        let animationId;
+        
         function frame(now) {
           const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(2, -10 * progress);
+          const eased = 1 - Math.pow(2, -8 * progress); // Reduzido de -10
           const val = Math.round(from + (to - from) * eased);
           cb(val.toLocaleString('pt-BR'));
-          if (progress < 1) requestAnimationFrame(frame);
+          
+          if (progress < 1) {
+            animationId = requestAnimationFrame(frame);
+          } else {
+            // Limpar quando terminar
+            if (animationId) {
+              cancelAnimationFrame(animationId);
+            }
+          }
         }
-        requestAnimationFrame(frame);
+        
+        animationId = requestAnimationFrame(frame);
+        
+        // Timeout de segurança para evitar loops infinitos
+        setTimeout(() => {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            cb(to.toLocaleString('pt-BR'));
+          }
+        }, duration + 100);
       }
+      
       function modernFadeValue(prefix = '', color = '#f8fafc') {
-        valueEl.style.transition = 'color 0.3s, opacity 0.3s, transform 0.4s cubic-bezier(.4,0,.2,1)';
+        valueEl.style.transition = 'color 0.2s, opacity 0.2s, transform 0.3s ease-out'; // Reduzido
         valueEl.style.opacity = 0;
-        valueEl.style.transform = 'translateY(-10px) scale(0.8)';
+        valueEl.style.transform = 'translateY(-5px) scale(0.95)'; // Reduzido
+        
         setTimeout(() => {
           valueEl.style.color = color;
           const fromVal = parseInt((valueEl.textContent || '').replace(/[^0-9]/g, ''));
-          animateNumberModern(fromVal, pontos, v => {
+          animateNumberOptimized(fromVal, pontos, v => {
             valueEl.innerHTML = prefix + v;
           });
+          
           // Trigger fade/scale in
-          requestAnimationFrame(() => {
+          setTimeout(() => {
             valueEl.style.opacity = 1;
             valueEl.style.transform = 'translateY(0) scale(1)';
-          });
-        }, 200);
+          }, 50);
+        }, 150); // Reduzido de 200ms
       }
+      
       btn.addEventListener('click', function() {
         if (!showingReais) {
-          // Pontos → Reais
+          // Pontos → Reais (1 ponto = R$ 3,25)
           emojiEl.textContent = '💸';
-          modernFadeValue('R$ ', '#22c55e'); // verde
+          const reais = pontos * 3.25; // CORREÇÃO: 1 ponto = R$ 3,25
+          animateNumberOptimized(0, reais, v => {
+            valueEl.innerHTML = 'R$ ' + v;
+          });
+          valueEl.style.color = '#22c55e'; // verde
           labelEl.textContent = 'VALOR MENSAL EM REAIS';
           toggleLabel.textContent = '🎯';
         } else {
