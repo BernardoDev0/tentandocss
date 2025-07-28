@@ -4,37 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistema de Pontos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.rel='stylesheet'">
+    <style>
+        /* === Variáveis e Reset === */
+        :root{--primary:#3b82f6;--secondary:#1e40af;--bg-start:#0f172a;--bg-end:#1e293b;--glass:rgba(30,41,59,.8);--border:rgba(148,163,184,.3);--text:#f8fafc;--text-light:#cbd5e1;--text-muted:#94a3b8;--danger:#ef4444;--radius:16px;--shadow-lg:0 20px 40px rgba(0,0,0,.4)}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,var(--bg-start) 0%,var(--bg-end) 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden;color:var(--text)}
+        body::before{content:"";position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(59,130,246,.1) 0%,transparent 50%);animation:rotate 20s linear infinite;z-index:-1}
+        body::after{content:"";position:absolute;top:20%;right:10%;width:300px;height:300px;background:radial-gradient(circle,rgba(30,64,175,.2) 0%,transparent 70%);border-radius:50%;z-index:-1}
+        @keyframes rotate{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+        /* === Card === */
+        .container{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:3rem;width:100%;max-width:450px;box-shadow:var(--shadow-lg);position:relative;z-index:1}
+        .back-button{position:absolute;top:1.5rem;left:1.5rem;display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1rem;background:rgba(30,41,59,.6);color:var(--text-light);text-decoration:none;border-radius:10px;font-size:.9rem;border:1px solid var(--border);transition:.3s}
+        .back-button:hover{background:rgba(30,41,59,.8);color:var(--text);transform:translateY(-2px)}
+        h1{text-align:center;margin:1rem 0 2.5rem;font-size:2.5rem;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:relative}
+        h1::after{content:"";position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:60px;height:3px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:2px}
+        /* Alert */
+        .alert{padding:1rem 1.25rem;border-radius:12px;margin-bottom:1.5rem;font-size:.95rem;border:1px solid;position:relative;overflow:hidden}
+        .alert::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:var(--danger)}
+        .alert-error{background:rgba(239,68,68,.1);color:#fca5a5;border-color:rgba(239,68,68,.3)}
+        /* Form */
+        form{display:flex;flex-direction:column;gap:1.5rem}
+        label{font-weight:600;font-size:.95rem;margin-bottom:.5rem}
+        .input-group{position:relative}
+        .input-group i{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:1.1rem;z-index:2}
+        .input-group input{width:100%;padding:1rem 1.25rem;border:1px solid var(--border);border-radius:12px;background:rgba(15,23,42,.5);color:var(--text);font-size:1rem;transition:.3s;padding-left:3rem}
+        .input-group input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,130,246,.2);background:rgba(15,23,42,.7)}
+        .input-group input::placeholder{color:var(--text-muted)}
+        /* Button */
+        .btn-base{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border:none;padding:1rem 2rem;border-radius:12px;font-size:1.1rem;font-weight:600;cursor:pointer;transition:.3s;position:relative;overflow:hidden;margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
+        .btn-base::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .5s}
+        .btn-base:hover::before{left:100%}
+        .btn-base:hover{transform:translateY(-3px);box-shadow:0 10px 25px rgba(59,130,246,.4)}
+        .btn-base:active{transform:translateY(-1px)}
+        /* Footer */
+        .login-footer{text-align:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+        .login-footer p{color:var(--text-muted);font-size:.9rem}
+        /* Responsive */
+        @media(max-width:480px){.container{padding:2rem 1.5rem;margin:1rem}h1{font-size:2rem}.back-button{position:relative;top:0;left:0;margin-bottom:1rem}}
+        /* Loading */
+        .btn-loading{color:transparent;pointer-events:none}
+        .btn-loading::after{content:"";position:absolute;width:20px;height:20px;top:50%;left:50%;margin:-10px 0 0 -10px;border:2px solid #fff;border-radius:50%;border-top-color:transparent;animation:spin 1s linear infinite}
+        @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    </style>
 </head>
 <body>
     <div class="container">
-        <a href="{{ url_for('auth.index') }}" class="btn-base back-button">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-
-        <h1>Login</h1>
-
+        <!-- Logo da Monitorar -->
+        <div style="text-align:center;margin-bottom:2rem">
+            <img src="{{ url_for('static', filename='moni2.ico') }}" alt="Monitorar Logo" style="width:245px;height:auto">
+        </div>
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-error">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+          {% if messages %}
+            <div class="alert alert-error">{{ messages[0] }}</div>
+          {% endif %}
         {% endwith %}
-
-        <form method="POST" action="{{ url_for('auth.login') }}">
-            <div>
-                <label for="usuario">Usuário:</label>
-                <input type="text" id="usuario" name="usuario" required>
+        <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuário:</label>
+                <div class="input-group"><i class="fas fa-user"></i><input type="text" id="username" name="username" placeholder="Digite seu usuário" required></div>
             </div>
-
-            <div>
-                <label for="senha">Senha:</label>
-                <input type="password" id="senha" name="senha" required>
+            <div class="form-group">
+                <label for="password">Senha:</label>
+                <div class="input-group"><i class="fas fa-lock"></i><input type="password" id="password" name="password" placeholder="Digite sua senha" required></div>
             </div>
-
-            <button type="submit" class="btn-base">Entrar</button>
+            <button type="submit" class="btn-base" id="loginBtn"><i class="fas fa-sign-in-alt"></i>Entrar</button>
         </form>
+        <div class="login-footer"><p>Sistema de Pontos v2.0</p></div>
     </div>
+    <script>
+      // Feedback de loading simples
+      document.getElementById('loginForm').addEventListener('submit',function(){
+        const btn=document.getElementById('loginBtn');btn.classList.add('btn-loading');
+      });
+      document.addEventListener('DOMContentLoaded',()=>document.getElementById('username').focus());
+    </script>
 </body>
 </html>

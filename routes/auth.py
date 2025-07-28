@@ -5,46 +5,42 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/')
 def index():
-    return render_template('index.html')
-
-@auth_bp.route('/employee_login', methods=['GET', 'POST'])
-def employee_login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']  # O nome do campo no formulário pode continuar sendo password
-        
-        # Usar access_key em vez de password e remover o filtro role='employee'
-        employee = Employee.query.filter_by(username=username, access_key=password).first()
-        
-        if employee:
-            session['user_id'] = employee.id
-            session['username'] = employee.username
-            session['real_name'] = employee.real_name
-            session['role'] = 'employee'  # Definir role diretamente na sessão
-            return redirect(url_for('dashboard.employee_dashboard_enhanced'))
-        else:
-            flash('Credenciais inválidas!', 'error')
-    
-    return render_template('employee_login.html')
+    # Sempre limpar sessão ao acessar página inicial para forçar novo login
+    session.clear()
+    return render_template('login.html')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password'].strip()
-        
-        # Verificar se é o CEO
-        if username == "Luis" and password == "Moni4242":
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+
+        # 1) Verificar CEO
+        if username.lower() == 'luis' and password == 'Moni4242':
             session.clear()
-            session['role'] = 'ceo'
-            session['user'] = username
-            session['real_name'] = 'Luis'  # Add real_name to session
-            session['user_id'] = 'ceo_001'  # Add user_id for consistency
+            session.update({
+                'role': 'ceo',
+                'user': username,
+                'real_name': 'Luis',
+                'user_id': 'ceo_001'
+            })
             return redirect(url_for('dashboard.ceo_dashboard_enhanced'))
-        else:
-            flash('Credenciais inválidas!', 'error')
-    
-    return render_template('ceo_login.html')
+
+        # 2) Verificar funcionário
+        employee = Employee.query.filter_by(username=username, access_key=password).first()
+        if employee:
+            session.clear()
+            session.update({
+                'user_id': employee.id,
+                'username': employee.username,
+                'real_name': employee.real_name,
+                'role': 'employee'
+            })
+            return redirect(url_for('dashboard.employee_dashboard_enhanced'))
+
+        flash('Credenciais inválidas!', 'error')
+
+    return render_template('login.html')
 
 @auth_bp.route('/logout')
 def logout():

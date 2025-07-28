@@ -73,9 +73,10 @@ def get_week_from_date(date_str):
         # Semana = (dias de diferença // 7) + 1
         week_number = (delta_days // 7) + 1
 
-        # Garantir que a semana 2 seja calculada corretamente
-        if 7 <= delta_days < 14:
-            week_number = 2
+        # Se o dia cair exatamente no múltiplo de 7 (ex.: 7, 14, 21...) **e** não for o primeiro dia do ciclo,
+        # consideramos ainda a semana anterior (mantém 26-02 como Semana 1, 03-09 Semana 2, etc.)
+        if delta_days != 0 and delta_days % 7 == 0:
+            week_number -= 1
 
         return min(week_number, 5)  # Limita a 5 semanas
     except Exception as e:
@@ -95,69 +96,38 @@ def get_available_weeks():
 # Por exemplo:
 def calculate_weekly_progress(employee_id=None, week_num=None):
     try:
-        if not week_num:  # Corrigir: era 'week', agora é 'week_num'
+        # Se não for informado, usar semana atual
+        if not week_num:
             week_num = get_current_week()
-        
-        # Se week_num for um número, usar o sistema de semanas do ciclo
-        if isinstance(week_num, int) or (isinstance(week_num, str) and week_num.isdigit()):
-            week_number = int(week_num)
-            
-            query = Entry.query
-            if employee_id:
-                query = query.filter(Entry.employee_id == employee_id)
-                current_app.logger.info(f"Filtrando por funcionário ID: {employee_id}")  # Corrigir: era app.logger
-            
-            entries = query.all()
-            
-            # Filtrar entradas pela semana específica
-            week_entries = []
-            for entry in entries:
-                try:
-                    entry_week = get_week_from_date(entry.date)
-                    if entry_week == week_number:
-                        week_entries.append(entry)
-                except:
-                    continue
-            
-            current_app.logger.info(f"Entradas encontradas para semana {week_number}: {len(week_entries)}")
-            
-            # Calcular totais por funcionário
-            employee_totals = {}
-            for entry in week_entries:
-                emp_name = entry.employee.real_name
-                if emp_name not in employee_totals:
-                    employee_totals[emp_name] = 0
-                employee_totals[emp_name] += entry.points
-            
-            current_app.logger.info(f"Totais semanais calculados: {employee_totals}")
-            return employee_totals
-        else:
-            # Usar o sistema antigo para compatibilidade
-            start_date, end_date = get_week_dates(str(week_num))  # Corrigir: era 'week'
-            current_app.logger.info(f"Calculando progresso semanal de {start_date} até {end_date}")  # Corrigir: era app.logger
-            
-            query = Entry.query.filter(
-                Entry.date >= start_date,
-                Entry.date <= end_date
-            )
-            
-            if employee_id:
-                query = query.filter(Entry.employee_id == employee_id)
-                current_app.logger.info(f"Filtrando por funcionário ID: {employee_id}")  # Corrigir: era app.logger
-            
-            entries = query.all()
-            current_app.logger.info(f"Entradas encontradas para cálculo semanal: {len(entries)}")  # Corrigir: era app.logger
-            
-            # Calcular totais por funcionário
-            employee_totals = {}
-            for entry in entries:
-                emp_name = entry.employee.real_name
-                if emp_name not in employee_totals:
-                    employee_totals[emp_name] = 0
-                employee_totals[emp_name] += entry.points
-            
-            current_app.logger.info(f"Totais semanais calculados: {employee_totals}")  # Corrigir: era app.logger
-            return employee_totals
+
+        # Sempre trabalhar com a versão em string para reutilizar a função get_week_dates
+        week_str = str(week_num)
+
+        # Obter intervalo (26-do-mês a 25-do-mês) correspondente à semana desejada
+        start_date, end_date = get_week_dates(week_str)
+        current_app.logger.info(
+            f"Calculando progresso semanal (semana {week_str}) – período {start_date} a {end_date}"
+        )
+
+        # Construir consulta filtrando pelo intervalo de datas
+        query = Entry.query.filter(Entry.date >= start_date, Entry.date <= end_date)
+
+        # Se for um funcionário específico, limitar
+        if employee_id:
+            query = query.filter(Entry.employee_id == employee_id)
+            current_app.logger.info(f"Filtrando por funcionário ID: {employee_id}")
+
+        entries = query.all()
+        current_app.logger.info(f"Entradas encontradas: {len(entries)}")
+
+        # Agrupar pontos por funcionário
+        employee_totals = {}
+        for entry in entries:
+            emp_name = entry.employee.real_name
+            employee_totals[emp_name] = employee_totals.get(emp_name, 0) + entry.points
+
+        current_app.logger.info(f"Totais semanais calculados: {employee_totals}")
+        return employee_totals
     except Exception as e:
         current_app.logger.error(f"Erro ao calcular progresso semanal: {str(e)}")
         return {}

@@ -5,118 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de {{ employee.real_name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/employee_dashboard.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-    .week-selector {
-        margin-bottom: 1.5rem;
-        text-align: right;
-    }
-    
-    .week-form {
-        display: inline-flex;
-        align-items: center;
-        background-color: var(--table-row-bg);
-        padding: 0.5rem 1rem;
-        border-radius: var(--radius);
-    }
-    
-    .week-form label {
-        margin-right: 0.5rem;
-        color: var(--text-light);
-    }
-    
-    .week-form select {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--radius);
-    }
-    
-    
-    .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-label {
-        color: var(--text-light);
-        font-size: 0.9rem;
-    }
-    
-    .progress-container {
-        margin: 1rem 0;
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 250px;
-        margin-top: 1rem;
-    }
-    
-    .tabs {
-        display: flex;
-        flex-wrap: wrap;
-        border-bottom: 1px solid var(--border-color);
-        margin-bottom: 1.5rem;
-    }
-    
-    .tab {
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        font-size: 0.95rem;
-        text-align: center;
-        flex: 1;
-    }
-    
-    .tab.active {
-        border-bottom: 3px solid var(--primary-color);
-        color: var(--primary-color);
-    }
-    
-    .tab-content {
-        display: none;
-    }
-    
-    .tab-content.active {
-        display: block;
-    }
-    
-    .trend-indicator {
-        display: inline-flex;
-        align-items: center;
-        margin-left: 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    .trend-up {
-        color: var(--success-color);
-    }
-    
-    .trend-down {
-        color: var(--danger-color);
-    }
-    
-    .trend-neutral {
-        color: var(--warning-color);
-    }
-    
-    /* Ajustes para mobile */
-    @media (max-width: 768px) {
-        .tab {
-            padding: 0.6rem 0.5rem;
-            font-size: 0.85rem;
-        }
-        
-        .dashboard-container {
-            grid-template-columns: 1fr;
-        }
-    }
-    </style>
 </head>
-<body>
+<body class="dashboard-employee">
     <div class="container">
     <a href="{{ url_for('auth.index') }}" class="back-button">Voltar</a>
     
@@ -135,11 +27,10 @@
     <form method="GET" action="{{ url_for('dashboard.employee_dashboard_enhanced') }}" class="week-form">
     <label for="week">Semana:</label>
     <select id="week" name="week" onchange="this.form.submit()">
-    <option value="1" {% if selected_week == '1' %}selected{% endif %}>Semana 1</option>
-    <option value="2" {% if selected_week == '2' %}selected{% endif %}>Semana 2</option>
-    <option value="3" {% if selected_week == '3' %}selected{% endif %}>Semana 3</option>
-    <option value="4" {% if selected_week == '4' %}selected{% endif %}>Semana 4</option>
-    <option value="5" {% if selected_week == '5' %}selected{% endif %}>Semana 5</option>
+      <option value="" {% if not selected_week %}selected{% endif %}>Todas</option>
+      {% for week_num in range(1, 6) %}
+        <option value="{{ week_num }}" {% if selected_week == week_num|string %}selected{% endif %}>Semana {{ week_num }}</option>
+      {% endfor %}
     </select>
     </form>
     </div>
@@ -199,7 +90,6 @@
     <!-- Tabs para diferentes visualizações -->
     <div class="tabs">
     <div class="tab" data-tab="evolution">Evolução Mensal</div>
-    <div class="tab" data-tab="weekly">Desempenho Semanal</div>
     <div class="tab active" data-tab="register">Registrar Pontos</div>
     <div class="tab" data-tab="history">Histórico</div>
     </div>
@@ -212,16 +102,9 @@
     </div>
     </div>
     
-    <div id="weekly" class="tab-content">
-    <h2>Desempenho Semanal</h2>
-    <div class="chart-container">
-    <canvas id="weeklyChart"></canvas>
-    </div>
-    </div>
-    
     <div id="register" class="tab-content active">
     <h2>Novo Registro</h2>
-    <form method="POST">
+    <form method="POST" action="{{ url_for('api.register_points') }}">
     <label for="refinery">Refinaria:</label>
     <select id="refinery" name="refinery" required>
     <option value="{{ employee.default_refinery }}" selected>{{ employee.default_refinery }}</option>
@@ -240,7 +123,18 @@
     <label for="observations">Observações:</label>
     <textarea id="observations" name="observations" required></textarea>
     
+    <input type="hidden" name="date" id="dateField">
+    
     <button type="submit" class="btn">Registrar</button>
+    <script>
+      // Preencher data padrão (AAAA-MM-DD) no campo oculto
+      document.addEventListener('DOMContentLoaded', function(){
+          const field = document.getElementById('dateField');
+          if(field){
+              field.value = new Date().toISOString().slice(0,10);
+          }
+      });
+    </script>
     </form>
     </div>
     
@@ -280,7 +174,15 @@
     var monthlyData = JSON.parse('{{ monthly_data|tojson|safe }}');
     var weeklyData = JSON.parse('{{ weekly_data|tojson|safe }}');
     
-    // Inicializar quando o documento estiver pronto
+    // Mostra toast se houver mensagem de sucesso
+    document.addEventListener('DOMContentLoaded', function(){
+        const successMsg = document.querySelector('.success-message');
+        if(successMsg){
+            successMsg.classList.add('toast');
+        }
+    });
+    
+    // Inicializar gráficos
     document.addEventListener('DOMContentLoaded', function() {
         initEmployeeDashboard(monthlyData, weeklyData);
     });

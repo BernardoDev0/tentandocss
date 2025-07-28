@@ -1,9 +1,11 @@
 from flask import Flask, request, render_template
 from config import Config
 from flask_caching import Cache
+from flask_mail import Mail
 from models import db
 from utils.helpers import safe_json_dumps
 import time
+import os
 
 # Instanciar cache antes das rotas
 cache = Cache()
@@ -18,7 +20,7 @@ app.config.setdefault('CACHE_DEFAULT_TIMEOUT', 30)
 
 # Inicializar extensões
 cache.init_app(app)
-
+mail = Mail(app)
 db.init_app(app)
 
 # Importar blueprints após cache existir
@@ -59,4 +61,5 @@ def log_request_time(response):
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', debug=debug_mode)

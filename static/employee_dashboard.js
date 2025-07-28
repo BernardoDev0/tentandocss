@@ -137,6 +137,9 @@ function initEmployeeDashboard(monthlyData, weeklyData) {
         // Adicionar classe active na tab clicada
         tab.classList.add('active');
         document.getElementById(tab.dataset.tab).classList.add('active');
+
+        // Atualizar hash na URL para permitir retorno à mesma aba após recarregar
+        window.location.hash = tab.dataset.tab;
       });
     });
   }
@@ -144,4 +147,27 @@ function initEmployeeDashboard(monthlyData, weeklyData) {
   // Inicializar quando o documento estiver pronto
   document.addEventListener('DOMContentLoaded', function() {
     setupTabs();
+
+    // Se existir hash na URL (ex.: #history), ativar a tab correspondente
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const targetTab = document.querySelector('.tab[data-tab="' + hash + '"]');
+      if (targetTab) {
+        targetTab.click();
+      }
+    }
+
+    if(successMsg){
+        // Add classe toast para centralizar
+        successMsg.classList.add('toast');
+
+        // Criar botão fechar
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Fechar';
+        closeBtn.className = 'toast-close';
+        closeBtn.addEventListener('click', function(){
+            successMsg.remove();
+        });
+        successMsg.appendChild(closeBtn);
+    }
   });

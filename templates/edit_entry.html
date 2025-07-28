@@ -1,79 +1,79 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Registro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.rel='stylesheet'">
     <style>
-        .back-button {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .back-button:hover {
-            background-color: #0056b3;
-        }
-        .success-message {
-            color: green;
-            margin: 10px 0;
-        }
-        .error-message {
-            color: red;
-            margin: 10px 0;
-        }
+        :root{--glass-bg:rgba(30,41,59,0.8);--glass-border:rgba(148,163,184,0.3);--radius:16px;--text:#f8fafc;--accent:#3b82f6}
+        body{background:#1e293b;color:var(--text);font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+        .glass-card{background:var(--glass-bg);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:2rem;width:100%;max-width:420px;box-shadow:0 6px 24px rgba(0,0,0,0.25);display:flex;flex-direction:column}
+        h2{margin-top:0;margin-bottom:1.5rem;font-weight:600;text-align:center}
+        label{display:block;font-size:0.85rem;margin-bottom:0.25rem;color:var(--text)}
+        input,textarea{width:100%;padding:0.55rem 0.8rem;border-radius:8px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.05);color:var(--text);margin-bottom:1rem;font-size:0.9rem;box-sizing:border-box}
+        textarea{resize:vertical;min-height:80px}
+        .actions{display:flex;gap:1rem;justify-content:center;margin-top:1rem}
+        .btn{background:var(--accent);border:none;padding:0.6rem 1.4rem;border-radius:8px;color:#fff;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:6px;transition:background .25s,transform .15s}
+        .btn:hover{background:#2563eb;transform:translateY(-2px)}
+        .btn-cancel{background:rgba(239,68,68,0.9)}
+        .btn-cancel:hover{background:#b91c1c}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Editar Registro</h1>
-        
-        <a href="{{ url_for('ceo_dashboard_enhanced', week=selected_week, employee_id=selected_employee_id, view=view_type) }}" 
-           class="btn-base back-button">
-            <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-
-        <!-- Mensagens flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="{{ category }}-message">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
- 
+    <div class="glass-card">
+        <h2><i class="fas fa-pen"></i> Editar Registro</h2>
         <form method="POST">
-            <div>
-                <label for="date">Data:</label>
-                <input type="datetime-local" id="date" name="date" value="{{ formatted_date }}" required>
+            <label for="date">Data</label>
+            <input type="date" id="date" name="date" value="{{ iso_date }}" required>
+
+            <label for="time">Hora</label>
+            <input type="text" id="time" name="time" value="{{ iso_time }}" placeholder="HHMMSS ou HH:MM:SS" inputmode="numeric">
+
+            <label for="refinery">Refinaria</label>
+            <input type="text" id="refinery" name="refinery" value="{{ entry.refinery }}" required>
+
+            <label for="points">Pontos</label>
+            <input type="number" id="points" name="points" value="{{ entry.points }}" required>
+
+            <label for="observations">Observações</label>
+            <textarea id="observations" name="observations">{{ entry.observations }}</textarea>
+
+            <div class="actions">
+                <button type="submit" class="btn"><i class="fas fa-save"></i> Salvar</button>
+                <a href="javascript:history.back()" class="btn btn-cancel"><i class="fas fa-times"></i> Cancelar</a>
             </div>
-            
-            <div>
-                <label for="refinery">Refinaria:</label>
-                <input type="text" id="refinery" name="refinery" value="{{ entry.refinery }}" required>
-            </div>
-            
-            <div>
-                <label for="points">Pontos:</label>
-                <input type="number" id="points" name="points" value="{{ entry.points }}" required>
-            </div>
-            
-            <div>
-                <label for="observations">Observações:</label>
-                <textarea id="observations" name="observations" required>{{ entry.observations }}</textarea>
-            </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn-base">Salvar Alterações</button>
-                <a href="{{ url_for('ceo_dashboard_enhanced', week=selected_week, employee_id=selected_employee_id, view=view_type) }}" 
-                   class="btn-base btn-danger">Cancelar</a>
-            </div>
+            {# Incluir campos ocultos se precisar manter contexto #}
+            {% if request.args.get('week') %}
+            <input type="hidden" name="week" value="{{ request.args.get('week') }}">
+            {% endif %}
+            {% if request.args.get('employee_id') %}
+            <input type="hidden" name="employee_id" value="{{ request.args.get('employee_id') }}">
+            {% endif %}
         </form>
     </div>
+    <script>
+      (function(){
+        const timeInput = document.getElementById('time');
+        if(!timeInput) return;
+        function format(val){
+          const digits = val.replace(/[^0-9]/g,'').slice(0,6);
+          let out='';
+          if(digits.length>=5){
+            out = `${digits.slice(0,2)}:${digits.slice(2,4)}:${digits.slice(4,6)}`;
+          }else if(digits.length>=3){
+            out = `${digits.slice(0,2)}:${digits.slice(2,4)}`;
+          }else {
+            out = digits;
+          }
+          return out;
+        }
+        timeInput.addEventListener('input', e=>{
+          const formatted = format(e.target.value);
+          e.target.value = formatted;
+        });
+        // Se valor pré-carregado estiver sem ':' mas com 6 dígitos
+        timeInput.value = format(timeInput.value);
+      })();
+    </script>
 </body>
 </html>
