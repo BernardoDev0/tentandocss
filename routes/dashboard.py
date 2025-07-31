@@ -134,7 +134,8 @@ def employee_dashboard_enhanced():
                     monthly_points_simple = dataset.get('data', [])
                     break
 
-        goals_array = [employee.weekly_goal] * len(monthly_labels)
+        # ✅ CORREÇÃO: Verificar se monthly_labels é uma lista antes de usar len()
+        goals_array = [employee.weekly_goal] * (len(monthly_labels) if monthly_labels else 0)
 
         monthly_data = {
             'labels': monthly_labels,
