@@ -291,7 +291,8 @@ def extract_data_from_excel(file_path):
                         file_data['employees'][employee_name] = {
                             'total': 0,
                             'records': 0,
-                            'refineries': {}
+                            'refineries': {},
+                            'months': {}  # ✅ ADICIONAR: Dados por mês
                         }
                     
                     file_data['employees'][employee_name]['total'] += points_value
@@ -303,20 +304,17 @@ def extract_data_from_excel(file_path):
                             file_data['employees'][employee_name]['refineries'][refinery_value] = 0
                         file_data['employees'][employee_name]['refineries'][refinery_value] += points_value
                     
-                    # Adicionar ao mês
-                    if month_key not in file_data['months']:
-                        file_data['months'][month_key] = {}
-                    
-                    if employee_name not in file_data['months'][month_key]:
-                        file_data['months'][month_key][employee_name] = {
-                            'total': 0,
+                    # ✅ CORREÇÃO: Adicionar ao mês corretamente
+                    if month_key not in file_data['employees'][employee_name]['months']:
+                        file_data['employees'][employee_name]['months'][month_key] = {
+                            'points': 0,
                             'records': 0
                         }
                     
-                    file_data['months'][month_key][employee_name]['total'] += points_value
-                    file_data['months'][month_key][employee_name]['records'] += 1
+                    file_data['employees'][employee_name]['months'][month_key]['points'] += points_value
+                    file_data['employees'][employee_name]['months'][month_key]['records'] += 1
                     
-                    # Adicionar registro
+                    # Adicionar registro individual
                     file_data['records'].append({
                         'employee': employee_name,
                         'date': date_value,
@@ -391,20 +389,12 @@ def merge_excel_data(file_data):
             if employee not in excel_data['employees']:
                 excel_data['employees'][employee] = data
             else:
-                # Somar dados existentes
-                excel_data['employees'][employee]['total'] += data.get('total', 0)
+                # ✅ CORREÇÃO: Não somar dados dos meses novamente - usar apenas registros individuais
+                # Os dados dos meses já estão calculados corretamente no extract_data_from_excel
+                pass
         
-        # Mesclar meses
-        for month, data in file_data.get('months', {}).items():
-            if month not in excel_data['months']:
-                excel_data['months'][month] = data
-            else:
-                # Mesclar dados do mês
-                for employee, employee_data in data.items():
-                    if employee not in excel_data['months'][month]:
-                        excel_data['months'][month][employee] = employee_data
-                    else:
-                        excel_data['months'][month][employee]['total'] += employee_data.get('total', 0)
+        # ✅ CORREÇÃO: Não mesclar meses - usar apenas registros individuais
+        # Os dados dos meses serão calculados no frontend
         
         # Adicionar registros
         excel_data['statistics']['total_records'] += file_data.get('records', 0)
@@ -418,25 +408,43 @@ def calculate_final_statistics():
         excel_data['statistics']['total_employees'] = len(excel_data['employees'])
         excel_data['statistics']['total_months'] = len(excel_data['months'])
         
-        # Calcular estatísticas adicionais
+        # ✅ CORREÇÃO: Calcular estatísticas a partir dos registros individuais
         total_points = 0
         total_records = 0
         employee_stats = {}
         
-        # Calcular totais por funcionário
+        # Calcular totais por funcionário a partir dos registros individuais
         for employee, data in excel_data['employees'].items():
-            total_points += data.get('total', 0)
-            total_records += data.get('records', 0)
+            # Calcular total a partir dos registros individuais
+            employee_points = 0
+            employee_records = 0
+            
+            # Se temos registros individuais, calcular a partir deles
+            if 'records' in data and isinstance(data['records'], list):
+                for record in data['records']:
+                    employee_points += record.get('points', 0)
+                    employee_records += 1
+            else:
+                # Fallback para dados antigos
+                employee_points = data.get('total', 0)
+                employee_records = data.get('records', 0)
+            
+            # Atualizar dados do funcionário
+            data['total'] = employee_points
+            data['records'] = employee_records
+            
+            total_points += employee_points
+            total_records += employee_records
             
             # Estatísticas por funcionário
             employee_stats[employee] = {
-                'total_points': data.get('total', 0),
-                'total_records': data.get('records', 0),
-                'average_points': data.get('total', 0) / max(data.get('records', 1), 1),
+                'total_points': employee_points,
+                'total_records': employee_records,
+                'average_points': employee_points / max(employee_records, 1),
                 'refineries': data.get('refineries', {})
             }
         
-        # Calcular estatísticas por mês
+        # Calcular estatísticas por mês (se necessário)
         month_stats = {}
         for month, data in excel_data['months'].items():
             month_total = 0

@@ -311,7 +311,7 @@ def export():
     try:
         # Buscar todos os funcionários
         employees = Employee.query.all()
-        
+
         if not employees:
             flash('Nenhum funcionário encontrado para exportar!', 'warning')
             return redirect(url_for('dashboard.ceo_dashboard_enhanced'))
@@ -329,7 +329,7 @@ def export():
                     wb = Workbook()
                     ws = wb.active
                     ws.title = employee.real_name
-                    
+
                     # Estilos
                     header_font = Font(bold=True, color="FFFFFF")
                     header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
@@ -341,7 +341,7 @@ def export():
                         cell.font = header_font
                         cell.fill = header_fill
                         cell.alignment = Alignment(horizontal="center")
-                    
+
                     # Dados
                     total_points = 0
                     for row, entry in enumerate(entries, 2):
@@ -359,7 +359,7 @@ def export():
                     ws.cell(row=total_row, column=2, value='')
                     ws.cell(row=total_row, column=3, value=total_points)
                     ws.cell(row=total_row, column=4, value=f'Restante mensal: {remaining_monthly}')
-                    
+
                     # Ajustar largura das colunas
                     for column in ws.columns:
                         max_length = 0

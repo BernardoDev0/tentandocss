@@ -966,33 +966,10 @@
     });
     </script>
 
-    <!-- LCP Debug - defer para não bloquear -->
-    <script defer>
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        new PerformanceObserver(function(list) {
-          const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1];
-          if (lastEntry) {
-            console.log('🔍 LCP Element:', lastEntry.element);
-            console.log('🔍 LCP Value:', lastEntry.renderTime || lastEntry.loadTime);
-            console.log('🔍 LCP Size:', lastEntry.size);
-          }
-        }).observe({type: 'largest-contentful-paint', buffered: true});
-      }, 1000);
-    }); 
-    </script>
-
     <!-- Script de teste para depuração -->
     <!-- Importar Chart.js e plugin antes do ceo_dashboard.js -->
     
-    <!-- Scripts de otimização de performance -->
-    <script src="{{ url_for('static', filename='js/fps-optimizer.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tab-diagnostic.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/quick-test.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/excel-performance-test.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/excel-debug.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/excel-force-fix.js') }}"></script>
+    <!-- Scripts essenciais -->
     <script src="{{ url_for('static', filename='js/chart-optimized.js') }}"></script>
     
     <script src="{{ url_for('static', filename='ceo_dashboard.js') }}"></script>

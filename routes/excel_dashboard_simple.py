@@ -24,8 +24,12 @@ excel_data = {
     }
 }
 
-def get_month_from_date(date_value):
-    """Converter data para mês no formato 26º ao 25º"""
+def get_custom_month(date_value):
+    """
+    Retorna o mês no formato MM/YYYY considerando o mês da empresa (26 ao 25).
+    Lógica: Se dia >= 26, pertence ao mês seguinte. Se dia < 26, pertence ao mês atual.
+    Exemplo: Abril vai de 26/03 até 25/04
+    """
     try:
         if not date_value or pd.isna(date_value):
             return 'Sem Data'
@@ -34,32 +38,35 @@ def get_month_from_date(date_value):
         if isinstance(date_value, str):
             date_value = pd.to_datetime(date_value)
         
-        # Extrair dia e mês
         day = date_value.day
         month = date_value.month
         year = date_value.year
         
-        # Lógica: se dia >= 26, pertence ao mês atual
-        # Se dia < 26, pertence ao mês anterior
+        # LÓGICA CORRETA: Se dia >= 26, pertence ao mês seguinte
         if day >= 26:
+            if month == 12:
+                target_month = 1
+                target_year = year + 1
+            else:
+                target_month = month + 1
+                target_year = year
+        else:
             target_month = month
             target_year = year
-        else:
-            if month == 1:
-                target_month = 12
-                target_year = year - 1
-            else:
-                target_month = month - 1
-                target_year = year
         
-        # Formatar como "MM/YYYY"
         month_key = f"{target_month:02d}/{target_year}"
+        logger.info(f"📅 {date_value} (dia {day}) → {month_key}")
         
         return month_key
         
     except Exception as e:
         logger.error(f"Erro ao converter data {date_value}: {str(e)}")
         return 'Sem Data'
+
+# Manter a função antiga para compatibilidade, mas usar a nova
+def get_month_from_date(date_value):
+    """Alias para get_custom_month - manter compatibilidade"""
+    return get_custom_month(date_value)
 
 def extract_data_from_excel(file_path):
     """Extrair dados de um arquivo Excel"""
@@ -93,6 +100,9 @@ def extract_data_from_excel(file_path):
             'months': {},
             'records': []
         }
+        
+        # ✅ ADICIONAR: Set para evitar registros duplicados
+        processed_records = set()
         
         # Tentar identificar colunas relevantes
         columns = df.columns.tolist()
@@ -131,6 +141,7 @@ def extract_data_from_excel(file_path):
                 if any(col and pd.notna(row[col]) and str(row[col]).lower() == 'total' for col in [date_column, points_column]):
                     continue
                 
+                # ✅ RESTAURAR: Processamento de registros individuais
                 # Extrair dados da linha
                 date_value = None
                 points_value = 0
@@ -159,44 +170,57 @@ def extract_data_from_excel(file_path):
                     # Determinar mês baseado na data (26º ao 25º)
                     month_key = get_month_from_date(date_value) if date_value else 'Sem Data'
                     
+                    # ✅ ADICIONAR: Verificar duplicação
+                    record_key = f"{date_value}_{points_value}_{employee_name}"
+                    if record_key in processed_records:
+                        logger.warning(f"⚠️ Registro duplicado no arquivo: {record_key}")
+                        continue
+                    processed_records.add(record_key)
+                    
+                    # ✅ REMOVER: Verificação de pontos suspeitos (usuário confirmou que são válidos)
+                    # if points_value > 2000:
+                    #     logger.warning(f"⚠️ Pontos muito altos detectados: {points_value} para {employee_name} em {date_value}")
+                    #     # Verificar se é realmente válido
+                    #     if points_value > 5000:
+                    #         logger.warning(f"❌ Pontos extremamente altos ignorados: {points_value}")
+                    #         continue
+                    
+                    logger.info(f"📊 Processando linha {index}: {employee_name} - {points_value} pontos - {month_key}")
+                    
                     # Adicionar ao funcionário
                     if employee_name not in file_data['employees']:
                         file_data['employees'][employee_name] = {
                             'total': 0,
                             'records': 0,
-                            'refineries': {}
+                            'refineries': {},
+                            'months': {}
                         }
+                        logger.info(f"✅ Novo funcionário criado: {employee_name}")
                     
+                    old_total = file_data['employees'][employee_name]['total']
                     file_data['employees'][employee_name]['total'] += points_value
                     file_data['employees'][employee_name]['records'] += 1
+                    logger.info(f"📊 Total atualizado: {old_total} + {points_value} = {file_data['employees'][employee_name]['total']}")
                     
                     # Adicionar refinaria
                     if refinery_value:
                         if refinery_value not in file_data['employees'][employee_name]['refineries']:
                             file_data['employees'][employee_name]['refineries'][refinery_value] = 0
                         file_data['employees'][employee_name]['refineries'][refinery_value] += points_value
+                        logger.info(f"🏭 Refinaria atualizada: {refinery_value} = {file_data['employees'][employee_name]['refineries'][refinery_value]}")
                     
-                    # Adicionar ao mês
-                    if month_key not in file_data['months']:
-                        file_data['months'][month_key] = {}
-                    
-                    if employee_name not in file_data['months'][month_key]:
-                        file_data['months'][month_key][employee_name] = {
-                            'total': 0,
-                            'records': 0
-                        }
-                    
-                    file_data['months'][month_key][employee_name]['total'] += points_value
-                    file_data['months'][month_key][employee_name]['records'] += 1
-                    
-                    # Adicionar registro
-                    file_data['records'].append({
+                    # Adicionar registro individual
+                    record_data = {
                         'employee': employee_name,
                         'date': date_value,
                         'points': points_value,
                         'month': month_key,
                         'refinery': refinery_value
-                    })
+                    }
+                    file_data['records'].append(record_data)
+                    logger.info(f"📋 Registro adicionado: {record_data}")
+                else:
+                    logger.warning(f"❌ Dados inválidos na linha {index}: employee={employee_name}, points={points_value}")
                 
             except Exception as e:
                 logger.warning(f"Erro ao processar linha {index}: {str(e)}")
@@ -220,24 +244,46 @@ def extract_data_from_excel(file_path):
 def merge_excel_data(file_data):
     """Mesclar dados de um arquivo com os dados globais"""
     try:
-        # Mesclar funcionários
-        for employee, data in file_data.get('employees', {}).items():
-            if employee not in excel_data['employees']:
-                excel_data['employees'][employee] = {
-                    'totalPoints': data.get('total', 0),
-                    'totalRecords': data.get('records', 0),
-                    'records': [],  # Array de registros individuais
-                    'months': {}    # Dados por mês
-                }
-            else:
-                # Somar dados existentes
-                excel_data['employees'][employee]['totalPoints'] += data.get('total', 0)
-                excel_data['employees'][employee]['totalRecords'] += data.get('records', 0)
+        logger.info(f"🔍 === DEBUG: MESCLANDO DADOS ===")
+        logger.info(f"📊 Dados do arquivo: {file_data}")
         
-        # Mesclar registros individuais
+        # ✅ SIMPLIFICAÇÃO: Processar apenas registros individuais
         for record in file_data.get('records', []):
             employee_name = record.get('employee')
-            if employee_name in excel_data['employees']:
+            logger.info(f"📋 Processando registro: {record}")
+            
+            if employee_name not in excel_data['employees']:
+                logger.info(f"✅ Novo funcionário: {employee_name}")
+                excel_data['employees'][employee_name] = {
+                    'totalPoints': 0,
+                    'totalRecords': 0,
+                    'records': [],
+                    'months': {}
+                }
+            
+            # ✅ ADICIONAR: Verificar duplicação
+            record_key = f"{record.get('date')}_{record.get('points')}_{employee_name}"
+            existing_records = excel_data['employees'][employee_name]['records']
+            
+            # Verificar se registro já existe
+            is_duplicate = False
+            for existing_record in existing_records:
+                existing_key = f"{existing_record.get('date')}_{existing_record.get('points')}_{employee_name}"
+                if record_key == existing_key:
+                    logger.warning(f"⚠️ Registro duplicado detectado: {record_key}")
+                    is_duplicate = True
+                    break
+            
+            # ✅ ADICIONAR: Verificar duplicação por data e hora (mesmo dia, mesma hora)
+            if not is_duplicate:
+                for existing_record in existing_records:
+                    if (existing_record.get('date') == record.get('date') and 
+                        existing_record.get('points') == record.get('points')):
+                        logger.warning(f"⚠️ Registro duplicado por data/hora: {record.get('date')} - {record.get('points')} pontos")
+                        is_duplicate = True
+                        break
+            
+            if not is_duplicate:
                 # Adicionar registro individual
                 excel_data['employees'][employee_name]['records'].append({
                     'date': record.get('date'),
@@ -245,25 +291,11 @@ def merge_excel_data(file_data):
                     'refinery': record.get('refinery'),
                     'month': record.get('month')
                 })
+                logger.info(f"✅ Registro adicionado para {employee_name}")
+            else:
+                logger.info(f"⏭️ Registro duplicado ignorado: {employee_name}")
         
-        # Mesclar dados por mês
-        for month, month_data in file_data.get('months', {}).items():
-            for employee, employee_data in month_data.items():
-                if employee in excel_data['employees']:
-                    if 'months' not in excel_data['employees'][employee]:
-                        excel_data['employees'][employee]['months'] = {}
-                    
-                    if month not in excel_data['employees'][employee]['months']:
-                        excel_data['employees'][employee]['months'][month] = {
-                            'points': 0,
-                            'records': 0
-                        }
-                    
-                    excel_data['employees'][employee]['months'][month]['points'] += employee_data.get('total', 0)
-                    excel_data['employees'][employee]['months'][month]['records'] += employee_data.get('records', 0)
-        
-        # Adicionar registros
-        excel_data['statistics']['total_records'] += len(file_data.get('records', []))
+        logger.info(f"✅ Mesclagem concluída")
         
     except Exception as e:
         logger.error(f"Erro ao mesclar dados: {str(e)}")
@@ -274,23 +306,76 @@ def calculate_final_statistics():
         excel_data['statistics']['total_employees'] = len(excel_data['employees'])
         excel_data['statistics']['total_months'] = len(excel_data['months'])
         
-        # Calcular total de pontos
+        # ✅ CORREÇÃO: Calcular total de pontos a partir dos registros individuais
         total_points = 0
-        for employee_data in excel_data['employees'].values():
-            total_points += employee_data.get('totalPoints', 0)
+        total_records = 0
+        
+        logger.info(f"🔍 === DEBUG: CALCULANDO ESTATÍSTICAS FINAIS ===")
+        
+        for employee_name, employee_data in excel_data['employees'].items():
+            logger.info(f"\n👤 === FUNCIONÁRIO: {employee_name} ===")
+            
+            # Calcular total a partir dos registros individuais
+            employee_points = 0
+            employee_records = len(employee_data.get('records', []))
+            
+            logger.info(f"📋 Registros encontrados: {employee_records}")
+            
+            # ✅ ADICIONAR: Debug detalhado para cada registro
+            for i, record in enumerate(employee_data.get('records', [])):
+                points = record.get('points', 0)
+                date = record.get('date')
+                month = record.get('month')
+                
+                logger.info(f"  📋 Registro {i+1}: {date} - {points} pontos - {month}")
+                employee_points += points
+                logger.info(f"  📊 Subtotal {employee_name}: {employee_points} pontos")
+            
+            # Atualizar totalPoints com o valor calculado
+            old_total = employee_data.get('totalPoints', 0)
+            employee_data['totalPoints'] = employee_points
+            employee_data['totalRecords'] = employee_records
+            
+            logger.info(f"📊 {employee_name}: {old_total} → {employee_points} pontos ({employee_records} registros)")
+            
+            total_points += employee_points
+            total_records += employee_records
+            
+            logger.info(f"📊 Total acumulado: {total_points} pontos")
         
         excel_data['statistics']['total_points'] = total_points
+        excel_data['statistics']['total_records'] = total_records
         
         # Calcular média por registro
-        if excel_data['statistics']['total_records'] > 0:
-            excel_data['statistics']['average_points_per_record'] = total_points / excel_data['statistics']['total_records']
+        if total_records > 0:
+            excel_data['statistics']['average_points_per_record'] = total_points / total_records
         else:
             excel_data['statistics']['average_points_per_record'] = 0
         
+        logger.info(f"\n📊 === RESUMO FINAL ===")
+        logger.info(f"📊 Total de pontos: {total_points}")
+        logger.info(f"📊 Total de registros: {total_records}")
+        logger.info(f"📊 Média por registro: {excel_data['statistics']['average_points_per_record']}")
         logger.info(f"Estatísticas finais: {excel_data['statistics']}")
         
     except Exception as e:
         logger.error(f"Erro ao calcular estatísticas: {str(e)}")
+
+def clear_all_data():
+    """Limpar todos os dados em memória"""
+    global excel_data
+    excel_data = {
+        'employees': {},
+        'months': {},
+        'statistics': {
+            'total_files': 0,
+            'total_employees': 0,
+            'total_months': 0,
+            'total_records': 0,
+            'total_points': 0
+        }
+    }
+    logger.info("🧹 Dados limpos com sucesso")
 
 @excel_dashboard_simple_bp.route('/excel')
 def excel_dashboard():
@@ -323,7 +408,8 @@ def load_folder():
         data = request.get_json()
         folder_path = data.get('folder_path', 'registros monitorar')
         
-        logger.info(f"Processando pasta: {folder_path}")
+        logger.info(f"🔍 === DEBUG: CARREGANDO PASTA ===")
+        logger.info(f"📁 Pasta: {folder_path}")
         
         # Verificar se a pasta existe
         if not os.path.exists(folder_path):
@@ -332,35 +418,84 @@ def load_folder():
                 'message': f'Pasta "{folder_path}" não encontrada'
             }), 404
         
-        # Limpar dados anteriores
-        excel_data['employees'] = {}
-        excel_data['months'] = {}
-        excel_data['statistics']['total_files'] = 0
-        excel_data['statistics']['total_records'] = 0
-        excel_data['statistics']['total_points'] = 0
+        # ✅ CORREÇÃO: Limpar dados completamente
+        clear_all_data()
         
         # Contar e processar arquivos Excel
         excel_files = []
+        logger.info(f"🔍 === BUSCANDO ARQUIVOS EXCEL ===")
+        
         for root, dirs, files in os.walk(folder_path):
+            logger.info(f"📁 Diretório: {root}")
+            logger.info(f"📁 Subdiretórios: {dirs}")
+            logger.info(f"📄 Arquivos: {files}")
+            
             for file in files:
                 if file.endswith(('.xlsx', '.xls')):
-                    excel_files.append(os.path.join(root, file))
+                    file_path = os.path.join(root, file)
+                    excel_files.append(file_path)
+                    logger.info(f"✅ Arquivo Excel encontrado: {file_path}")
+        
+        logger.info(f"📊 Total de arquivos Excel encontrados: {len(excel_files)}")
+        
+        # ✅ ADICIONAR: Verificar se há arquivos duplicados
+        file_names = [os.path.basename(f) for f in excel_files]
+        unique_names = set(file_names)
+        if len(file_names) != len(unique_names):
+            logger.warning(f"⚠️ ARQUIVOS DUPLICADOS DETECTADOS!")
+            logger.warning(f"📊 Arquivos encontrados: {file_names}")
+            logger.warning(f"📊 Arquivos únicos: {list(unique_names)}")
         
         excel_data['statistics']['total_files'] = len(excel_files)
         
         # Processar cada arquivo
         processed_files = 0
+        processed_file_names = set()  # ✅ ADICIONAR: Para evitar duplicação
+        
         for file_path in excel_files:
             try:
+                file_name = os.path.basename(file_path)
+                
+                # ✅ ADICIONAR: Verificar se arquivo já foi processado
+                if file_name in processed_file_names:
+                    logger.warning(f"⚠️ Arquivo já processado: {file_name}")
+                    continue
+                processed_file_names.add(file_name)
+                
+                logger.info(f"\n📄 === PROCESSANDO ARQUIVO ===")
+                logger.info(f"📄 Arquivo: {file_name}")
+                logger.info(f"📄 Caminho completo: {file_path}")
+                
                 file_result = extract_data_from_excel(file_path)
                 if file_result['status'] == 'success':
+                    logger.info(f"✅ Arquivo processado com sucesso")
+                    logger.info(f"📊 Dados extraídos: {file_result['data']}")
+                    
                     merge_excel_data(file_result['data'])
                     processed_files += 1
-                    logger.info(f"Arquivo processado: {os.path.basename(file_path)}")
+                    logger.info(f"✅ Arquivo mesclado: {file_name}")
                 else:
-                    logger.warning(f"Erro ao processar {file_path}: {file_result['message']}")
+                    logger.warning(f"❌ Erro ao processar {file_path}: {file_result['message']}")
             except Exception as e:
-                logger.error(f"Erro ao processar {file_path}: {str(e)}")
+                logger.error(f"❌ Erro ao processar {file_path}: {str(e)}")
+        
+        # ✅ ADICIONAR: Limpar registros duplicados específicos
+        # clean_duplicate_records() # Removido
+        
+        # ✅ ADICIONAR: Remover TODOS os dados de março
+        # clean_march_data() # Removido
+        
+        # ✅ ADICIONAR: Forçar apenas dados de abril a julho
+        # force_april_to_july_only() # Removido
+        
+        # ✅ ADICIONAR: Reclassificar março como abril
+        # reclassify_march_as_april() # Removido
+        
+        logger.info(f"\n📊 === RESUMO DO PROCESSAMENTO ===")
+        logger.info(f"📄 Arquivos encontrados: {len(excel_files)}")
+        logger.info(f"✅ Arquivos processados: {processed_files}")
+        logger.info(f"📊 Funcionários: {len(excel_data['employees'])}")
+        logger.info(f"📋 Registros totais: {excel_data['statistics']['total_records']}")
         
         # Calcular estatísticas finais
         calculate_final_statistics()

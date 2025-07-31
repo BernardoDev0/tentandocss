@@ -183,7 +183,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if ' ' in entry.date and len(entry.date.split(' ')) > 1 %}
+                    {% if ' ' in entry.date and entry.date.split(' ')|length > 1 %}
                         {% set time_part = entry.date.split(' ')[1] %}
                         {% if ':' in time_part %}
                             {{ time_part[:5] }}

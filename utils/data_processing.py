@@ -50,11 +50,13 @@ def get_weekly_progress_data():
         
         for employee in employees:
             if employee.id in weekly_data:
+                # ✅ CORES FIXAS E DISTINTAS PARA CADA FUNCIONÁRIO
+                employee_colors = get_employee_color(employee.real_name)
                 dataset = {
                     'label': employee.real_name,
                     'data': weekly_data[employee.id],
-                    'borderColor': f'hsl({hash(employee.real_name) % 360}, 70%, 50%)',
-                    'backgroundColor': f'hsla({hash(employee.real_name) % 360}, 70%, 50%, 0.1)',
+                    'borderColor': employee_colors['border'],
+                    'backgroundColor': employee_colors['bg'],
                     'tension': 0.4
                 }
                 datasets.append(dataset)
@@ -122,11 +124,13 @@ def get_monthly_evolution_data():
         
         for employee in employees:
             if employee.id in monthly_data:
+                # ✅ CORES FIXAS E DISTINTAS PARA CADA FUNCIONÁRIO
+                employee_colors = get_employee_color(employee.real_name)
                 dataset = {
                     'label': employee.real_name,
                     'data': monthly_data[employee.id],
-                    'borderColor': f'hsl({hash(employee.real_name) % 360}, 70%, 50%)',
-                    'backgroundColor': f'hsla({hash(employee.real_name) % 360}, 70%, 50%, 0.1)',
+                    'borderColor': employee_colors['border'],
+                    'backgroundColor': employee_colors['bg'],
                     'tension': 0.4
                 }
                 datasets.append(dataset)
@@ -246,11 +250,11 @@ def get_weekly_evolution_data(employee_id=None):
 
 def get_employee_color(employee_name):
     """Retorna um esquema de cores para o funcionário"""
-    # Cores únicas e distintas para os funcionários reais do sistema
+    # ✅ CORES MAIS DISTINTAS E FÁCEIS DE DIFERENCIAR
     colors = {
-        'Rodrigo': {'border': '#9333EA', 'bg': 'rgba(147, 51, 234, 0.6)'}, # ✅ ROXO
-        'Maurício': {'border': '#3B82F6', 'bg': 'rgba(59, 130, 246, 0.6)'}, # ✅ AZUL
-        'Matheus': {'border': '#22C55E', 'bg': 'rgba(34, 197, 94, 0.6)'},   # ✅ VERDE
-        'Wesley': {'border': '#EF4444', 'bg': 'rgba(239, 68, 68, 0.6)'}     # ✅ VERMELHO
+        'Rodrigo': {'border': '#8B5CF6', 'bg': 'rgba(139, 92, 246, 0.6)'},   # ✅ ROXO ESCURO
+        'Maurício': {'border': '#F59E0B', 'bg': 'rgba(245, 158, 11, 0.6)'},   # ✅ LARANJA (era azul)
+        'Matheus': {'border': '#10B981', 'bg': 'rgba(16, 185, 129, 0.6)'},    # ✅ VERDE ESCURO
+        'Wesley': {'border': '#EF4444', 'bg': 'rgba(239, 68, 68, 0.6)'}       # ✅ VERMELHO
     }
-    return colors.get(employee_name, {'border': '#9B9B9B', 'bg': 'rgba(155, 155, 155, 0.6)'})
+    return colors.get(employee_name, {'border': '#6B7280', 'bg': 'rgba(107, 114, 128, 0.6)'})

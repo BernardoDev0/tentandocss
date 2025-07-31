@@ -397,185 +397,161 @@ window.ExcelDashboard = {
         console.log('📊 Dados para o gráfico:', chartData);
 
         // ✅ DETECTAR SE É MOBILE
-        const isMobile = window.innerWidth <= 600;
+        const isMobile = window.innerWidth <= 768; // ✅ AUMENTADO PARA 768px
         console.log('📱 É mobile?', isMobile);
 
-        // Configuração para gráfico de barras
+        // Configuração para gráfico de barras - COPIADA EXATAMENTE DA ABA GRÁFICOS
         try {
             this.state.chartInstance = new Chart(canvas, {
                 type: 'bar', // ✅ MUDADO PARA BARRAS
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                    animation: false,
-                plugins: {
-                    legend: {
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top', // ✅ MESMA POSIÇÃO DA ABA GRÁFICOS
                             display: true,
-                        position: isMobile ? 'bottom' : 'top', // ✅ POSIÇÃO ADAPTATIVA
-                        labels: {
-                            color: '#ffffff',
-                            font: {
-                                size: isMobile ? 10 : 12, // ✅ TAMANHO ADAPTATIVO
-                                    weight: '600'
-                            },
-                            usePointStyle: true,
-                                padding: isMobile ? 10 : 20 // ✅ PADDING ADAPTATIVO
-                        },
-                        onClick: (event, legendItem, legend) => {
-                                console.log('🔍 Legend clicada:', legendItem);
-                            const chart = legend.chart;
-                                const index = legendItem.datasetIndex; // ✅ CORREÇÃO: usar datasetIndex em vez de index
-                            const meta = chart.getDatasetMeta(index);
-                            
-                            // ✅ ANIMAÇÃO OTIMIZADA PARA LEGENDAS
-                            const originalOpacity = meta.hidden ? 0 : 1;
-                            const targetOpacity = meta.hidden ? 1 : 0;
-                            
-                            // Configurar animação suave com easing personalizado
-                            chart.options.animation = {
-                                duration: 400, // 400ms para transição mais suave
-                                easing: 'easeInOutCubic', // Easing mais suave
-                                onProgress: (animation) => {
-                                    // Aplicar transição de opacidade progressiva
-                                    if (meta.dataset) {
-                                        const progress = animation.currentStep / animation.numSteps;
-                                        const opacity = meta.hidden ? 
-                                            (1 - progress) : // Fade out
-                                            progress;        // Fade in
-                                        
-                                        // Aplicar opacidade às barras
-                                        if (meta.dataset.data) {
-                                            meta.dataset.data.forEach((bar, barIndex) => {
-                                                if (bar) {
-                                                    bar.opacity = opacity;
-                                                }
-                                            });
-                                        }
-                                    }
+                            labels: {
+                                color: '#ffffff', // ✅ MESMA COR DA ABA GRÁFICOS
+                                usePointStyle: true,
+                                padding: 10,
+                                font: {
+                                    size: 12 // ✅ MESMO TAMANHO DA ABA GRÁFICOS
                                 }
-                            };
-                            
-                            // Toggle visibility com animação
-                            meta.hidden = !meta.hidden;
-                            
-                            // Aplicar transição de opacidade
-                            if (meta.dataset) {
-                                meta.dataset.hidden = meta.hidden;
+                            },
+                            onClick: function(e, legendItem, legend) {
+                                // ✅ MESMA LÓGICA DA ABA GRÁFICOS
+                                const index = legendItem.datasetIndex;
+                                const ci = legend.chart;
+                                const meta = ci.getDatasetMeta(index);
+                                
+                                // ANIMAÇÃO OTIMIZADA PARA LEGENDAS
+                                const originalOpacity = meta.hidden ? 0 : 1;
+                                const targetOpacity = meta.hidden ? 1 : 0;
+                                
+                                // Configurar animação suave
+                                ci.options.animation = {
+                                    duration: 300, // 300ms - otimizado
+                                    easing: 'easeInOutQuart'
+                                };
+                                
+                                // Toggle visibility com animação
+                                meta.hidden = !meta.hidden;
+                                
+                                // Aplicar transição de opacidade
+                                if (meta.dataset) {
+                                    meta.dataset.hidden = meta.hidden;
+                                }
+                                
+                                // Atualizar com animação
+                                ci.update('active');
+                                
+                                // Resetar animação após conclusão
+                                setTimeout(() => {
+                                    ci.options.animation.duration = 0; // Desabilitar para performance
+                                }, 350);
                             }
-                            
-                            // Atualizar com animação
-                            chart.update('active');
-                            
-                            // Resetar animação após conclusão
-                            setTimeout(() => {
-                                chart.options.animation.duration = 0; // Desabilitar para performance
-                                chart.options.animation.onProgress = null; // Limpar callback
-                            }, 450);
-                            
-                            // Mostrar mensagem - CORREÇÃO: verificar se o dataset existe
-                            if (chart.data.datasets && chart.data.datasets[index]) {
-                                const datasetName = chart.data.datasets[index].label;
-                            const action = meta.hidden ? 'ocultado' : 'exibido';
-                                this.showMessage(`${datasetName} ${action}`, 'info');
-                            } else {
-                                console.log('Dataset não encontrado para índice:', index);
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(148, 163, 184, 0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            titleFont: {
+                                size: isMobile ? 12 : 14,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                size: isMobile ? 11 : 13
+                            },
+                            padding: isMobile ? 8 : 12,
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    return `📅 ${tooltipItems[0].label}`;
+                                },
+                                label: (tooltipItems) => {
+                                    const dataset = tooltipItems.dataset;
+                                    const value = tooltipItems.parsed.y;
+                                    const color = dataset.borderColor;
+                                    return `👤 ${dataset.label}: ${value.toLocaleString('pt-BR')} pontos`;
+                                },
+                                afterLabel: (tooltipItems) => {
+                                    const dataset = tooltipItems.dataset;
+                                    const value = tooltipItems.parsed.y;
+                                    const profit = (value * 3.25).toLocaleString('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL'
+                                    });
+                                    return `💰 Lucro: ${profit}`;
+                                }
                             }
                         }
                     },
-                    tooltip: {
-                        enabled: true,
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleColor: '#ffffff',
-                            bodyColor: '#e2e8f0',
-                        borderColor: 'rgba(148, 163, 184, 0.2)',
-                        borderWidth: 1,
-                        cornerRadius: 8,
-                        displayColors: true,
-                        callbacks: {
-                            title: (tooltipItems) => {
-                                return `Mês: ${tooltipItems[0].label}`;
-                            },
-                            label: (tooltipItems) => {
-                                    const dataset = tooltipItems.dataset;
-                                    const value = tooltipItems.parsed.y;
-                                    return `${dataset.label}: ${value.toLocaleString('pt-BR')} pontos`;
-                                }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                            display: true,
-                        title: {
-                            display: !isMobile, // ✅ ESCONDER TÍTULO NO MOBILE
-                            text: 'Meses',
-                            color: '#ffffff',
-                            font: {
-                                    size: 14,
-                                    weight: '600'
-                                }
-                            },
-                        ticks: {
-                                color: '#94a3b8',
-                            font: {
-                                    size: isMobile ? 10 : 12 // ✅ TAMANHO ADAPTATIVO
-                            },
-                            maxRotation: isMobile ? 45 : 0, // ✅ ROTAÇÃO NO MOBILE
-                            minRotation: isMobile ? 45 : 0
-                        },
-                        grid: {
-                                color: 'rgba(148, 163, 184, 0.1)'
-                            }
-                        },
-                        y: {
-                            display: true,
-                        title: {
-                            display: !isMobile, // ✅ ESCONDER TÍTULO NO MOBILE
-                            text: 'Pontos',
-                            color: '#ffffff',
-                            font: {
-                                    size: 14,
-                                    weight: '600'
-                                }
-                            },
+                    scales: {
+                        x: {
                             ticks: {
-                                color: '#94a3b8',
-                                font: {
-                                    size: isMobile ? 10 : 12 // ✅ TAMANHO ADAPTATIVO
-                                }
+                                color: '#ffffff' // ✅ MESMA COR DA ABA GRÁFICOS
                             },
                             grid: {
-                                color: 'rgba(148, 163, 184, 0.1)'
+                                color: 'rgba(255, 255, 255, 0.1)' // ✅ MESMA COR DA ABA GRÁFICOS
+                            },
+                            // ✅ CONFIGURAÇÕES ESPECÍFICAS PARA BARRAS - MESMAS DA ABA GRÁFICOS
+                            categoryPercentage: 0.8, // Largura das categorias
+                            barPercentage: 0.9 // Largura das barras
+                        },
+                        y: {
+                            ticks: {
+                                color: '#ffffff' // ✅ MESMA COR DA ABA GRÁFICOS
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)' // ✅ MESMA COR DA ABA GRÁFICOS
+                            }
                         }
-                    }
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
+                    },
+                    // ✅ CONFIGURAÇÕES ESPECÍFICAS PARA BARRAS - MESMAS DA ABA GRÁFICOS
                     elements: {
                         bar: {
-                            borderWidth: isMobile ? 1 : 2, // ✅ BORDA ADAPTATIVA
-                            borderRadius: isMobile ? 2 : 4 // ✅ BORDER RADIUS ADAPTATIVO
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            backgroundColor: [
+                                'rgba(147, 51, 234, 0.8)', // Rodrigo - Roxo
+                                'rgba(59, 130, 246, 0.8)', // Maurício - Azul
+                                'rgba(34, 197, 94, 0.8)',  // Matheus - Verde
+                                'rgba(239, 68, 68, 0.8)'   // Wesley - Vermelho
+                            ],
+                            borderColor: [
+                                'rgba(147, 51, 234, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(239, 68, 68, 1)'
+                            ]
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeInOutCubic' // ✅ MESMA ANIMAÇÃO DA ABA GRÁFICOS
                     }
                 }
-            }
-        });
+            });
 
-            console.log('✅ Gráfico de barras criado com sucesso');
-            
-            // Mostrar container do gráfico
-            const chartContainer = document.getElementById('excel-chart-container');
-            if (chartContainer) {
-                chartContainer.style.display = 'block';
+                console.log('✅ Gráfico de barras criado com sucesso');
+                
+                // Mostrar container do gráfico
+                const chartContainer = document.getElementById('excel-chart-container');
+                if (chartContainer) {
+                    chartContainer.style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao criar gráfico:', error);
+                this.showMessage('Erro ao criar gráfico: ' + error.message, 'error');
             }
-            
-        } catch (error) {
-            console.error('❌ Erro ao criar gráfico:', error);
-            this.showMessage('Erro ao criar gráfico: ' + error.message, 'error');
-        }
-    },
+        },
 
     // Preparar dados do gráfico
     prepareChartData() {
@@ -614,7 +590,7 @@ window.ExcelDashboard = {
                 data: monthlyData,
                 borderColor: colors.borderColor,
                 backgroundColor: colors.backgroundColor,
-            borderWidth: 2,
+                borderWidth: 2,
                 tension: 0.4,
                 fill: false
             });
@@ -631,7 +607,9 @@ window.ExcelDashboard = {
 
     // Processar registros de um funcionário para criar dados por mês
     processEmployeeRecords(empData, months) {
-        console.log('🔍 Processando registros do funcionário:', empData);
+        console.log('🔍 === DEBUG: PROCESSANDO REGISTROS ===');
+        console.log('Funcionário:', empData);
+        console.log('Meses:', months);
         
         // Inicializar dados por mês
         const monthlyPoints = {};
@@ -639,44 +617,63 @@ window.ExcelDashboard = {
             monthlyPoints[month] = 0;
         });
         
-        // Se temos registros individuais, processar eles
+        console.log('📊 Inicialização monthlyPoints:', monthlyPoints);
+        
+        // ✅ CORREÇÃO: Calcular meses APENAS a partir dos registros individuais
         if (empData.records && Array.isArray(empData.records)) {
-            console.log(`📋 Processando ${empData.records.length} registros...`);
+            console.log(`📋 Calculando a partir de ${empData.records.length} registros individuais...`);
             
+            // ✅ ADICIONAR: Set para evitar duplicação
+            const processedRecords = new Set();
+            
+            // ✅ ADICIONAR: Debug para cada registro
             empData.records.forEach((record, index) => {
-                console.log(`  📋 Registro ${index + 1}:`, record);
+                console.log(`\n📋 === REGISTRO ${index + 1} ===`);
+                console.log('Registro:', record);
                 
                 if (record.date && record.points) {
+                    console.log(`  📅 Data: ${record.date}, Pontos: ${record.points}`);
+                    
+                    // ✅ ADICIONAR: Verificar se já foi processado
+                    const recordKey = `${record.date}_${record.points}`;
+                    console.log(`  🔑 Chave do registro: ${recordKey}`);
+                    
+                    if (processedRecords.has(recordKey)) {
+                        console.log(`  ⚠️ Registro já processado: ${recordKey}`);
+                        return; // Pular registro duplicado
+                    }
+                    processedRecords.add(recordKey);
+                    
                     const month = this.getMonthFromDate(record.date);
+                    console.log(`  📅 Mês calculado: ${month}`);
+                    
                     if (month) {
                         // Converter para formato limpo
                         const cleanMonth = this.convertToCleanMonth(month);
+                        console.log(`  📅 Mês limpo: ${cleanMonth}`);
+                        console.log(`  📅 MonthlyPoints antes:`, monthlyPoints);
+                        
                         if (monthlyPoints.hasOwnProperty(cleanMonth)) {
+                            const oldValue = monthlyPoints[cleanMonth];
                             monthlyPoints[cleanMonth] += record.points;
-                            console.log(`    📅 Adicionado ${record.points} pontos para ${cleanMonth}`);
+                            console.log(`  ✅ Adicionado ${record.points} pontos para ${cleanMonth}`);
+                            console.log(`  📊 ${oldValue} + ${record.points} = ${monthlyPoints[cleanMonth]}`);
                         } else {
-                            console.log(`    ❌ Mês não encontrado: ${cleanMonth}`);
+                            console.log(`  ❌ Mês não encontrado: ${cleanMonth}`);
+                            console.log(`  📊 Meses disponíveis:`, Object.keys(monthlyPoints));
                         }
+                        
+                        console.log(`  📅 MonthlyPoints depois:`, monthlyPoints);
                     } else {
-                        console.log(`    ❌ Mês inválido para data: ${record.date}`);
+                        console.log(`  ❌ Mês inválido para data: ${record.date}`);
                     }
-                }
-            });
-        } else if (empData.months) {
-            // Se já temos dados por mês, usar eles
-            console.log('📅 Usando dados por mês existentes');
-            Object.entries(empData.months).forEach(([month, data]) => {
-                // Converter para formato limpo
-                const cleanMonth = this.convertToCleanMonth(month);
-                if (monthlyPoints.hasOwnProperty(cleanMonth)) {
-                    monthlyPoints[cleanMonth] = data.points || 0;
-                    console.log(`  📅 ${cleanMonth}: ${data.points || 0} pontos`);
+                } else {
+                    console.log(`  ❌ Dados inválidos: date=${record.date}, points=${record.points}`);
                 }
             });
         } else {
-            // Distribuir pontos totais pelos meses
+            // Fallback: distribuir pontos totais pelos meses
             console.log('📊 Distribuindo pontos totais pelos meses');
-            // ✅ CORREÇÃO: Usar as chaves corretas do backend (com underscore)
             const totalPoints = empData.total_points || empData.totalPoints || 0;
             const pointsPerMonth = Math.round(totalPoints / months.length);
             
@@ -688,6 +685,7 @@ window.ExcelDashboard = {
         // Converter para array na ordem dos meses
         const result = months.map(month => monthlyPoints[month] || 0);
         console.log('📊 Resultado final:', result);
+        console.log('📊 Soma total:', result.reduce((a, b) => a + b, 0));
         
         return result;
     },
@@ -731,6 +729,7 @@ window.ExcelDashboard = {
         console.log('🔍 === DEBUG: EXTRAINDO MESES DOS DADOS ===');
         
         const months = new Set();
+        const processedRecords = new Set(); // ✅ ADICIONAR: Para evitar duplicação
         
         if (this.state.data && this.state.data.employees) {
             console.log('📊 Processando dados dos funcionários...');
@@ -738,22 +737,30 @@ window.ExcelDashboard = {
             Object.values(this.state.data.employees).forEach((empData, index) => {
                 console.log(`\n👤 Funcionário ${index + 1}:`, empData);
                 
-                // Verificar se há dados de registros individuais
+                // ✅ CORREÇÃO: Extrair meses APENAS dos registros individuais
                 if (empData.records && Array.isArray(empData.records)) {
                     console.log(`  📋 ${empData.records.length} registros individuais encontrados`);
-                    this.extractMonthsFromRecords(empData.records, months);
-                } else {
-                    console.log('  ❌ Nenhum registro individual encontrado ou não é array');
-                }
-                
-                // Verificar se há dados por mês
-                if (empData.months) {
-                    console.log('  📅 Meses encontrados:', Object.keys(empData.months));
-                    Object.keys(empData.months).forEach(month => {
-                        months.add(month);
+                    
+                    // ✅ ADICIONAR: Debug para cada registro
+                    empData.records.forEach((record, recordIndex) => {
+                        console.log(`    📋 Registro ${recordIndex + 1}:`, record);
+                        
+                        if (record.date) {
+                            // ✅ ADICIONAR: Verificar se já foi processado
+                            const recordKey = `${record.date}_${record.points}`;
+                            if (processedRecords.has(recordKey)) {
+                                console.log(`    ⚠️ Registro já processado: ${recordKey}`);
+                                return; // Pular registro duplicado
+                            }
+                            processedRecords.add(recordKey);
+                            
+                            const month = this.getMonthFromDate(record.date);
+                            console.log(`    📅 Mês extraído: ${month}`);
+                            months.add(month);
+                        }
                     });
                 } else {
-                    console.log('  ❌ Nenhum dado de meses encontrado');
+                    console.log('  ❌ Nenhum registro individual encontrado');
                 }
             });
         }
@@ -910,18 +917,27 @@ window.ExcelDashboard = {
                 return null;
             }
             
-            // Lógica: mês vai do dia 26 ao dia 25
+            // LÓGICA CORRETA: Se dia >= 26, pertence ao mês seguinte
             const day = date.getDate();
             let month = date.getMonth();
             let year = date.getFullYear();
             
-            // Se o dia é 26 ou maior, o mês é o próximo
+            let target_month;
+            let target_year;
+
             if (day >= 26) {
-                month++;
-                if (month > 11) {
-                    month = 0;
-                    year++;
+                // Mês seguinte
+                if (month === 11) { // Dezembro
+                    target_month = 0; // Janeiro
+                    target_year = year + 1;
+                } else {
+                    target_month = month + 1;
+                    target_year = year;
                 }
+            } else {
+                // Mês atual
+                target_month = month;
+                target_year = year;
             }
             
             const monthNames = [
@@ -929,7 +945,7 @@ window.ExcelDashboard = {
                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
             ];
             
-            const monthName = monthNames[month];
+            const monthName = monthNames[target_month];
             console.log(`  📅 Mês calculado: ${monthName} (dia ${day})`);
             
             return monthName;
@@ -943,26 +959,26 @@ window.ExcelDashboard = {
     getEmployeeColors(employeeName) {
         const colorMap = {
             'Matheus': {
-                borderColor: 'rgba(34, 197, 94, 1)',    // Verde
-                backgroundColor: 'rgba(34, 197, 94, 0.1)'
+                borderColor: 'rgba(34, 197, 94, 1)',    // ✅ VERDE VIVO
+                backgroundColor: 'rgba(34, 197, 94, 0.8)'
             },
             'Maurício': {
-                borderColor: 'rgba(59, 130, 246, 1)',   // Azul
-                backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                borderColor: 'rgba(59, 130, 246, 1)',   // ✅ AZUL VIVO
+                backgroundColor: 'rgba(59, 130, 246, 0.8)'
             },
             'Rodrigo': {
-                borderColor: 'rgba(147, 51, 234, 1)',   // Roxo
-                backgroundColor: 'rgba(147, 51, 234, 0.1)'
+                borderColor: 'rgba(168, 85, 247, 1)',   // ✅ ROXO VIVO
+                backgroundColor: 'rgba(168, 85, 247, 0.8)'
             },
             'Wesley': {
-                borderColor: 'rgba(239, 68, 68, 1)',    // Vermelho
-                backgroundColor: 'rgba(239, 68, 68, 0.1)'
+                borderColor: 'rgba(239, 68, 68, 1)',    // ✅ VERMELHO VIVO
+                backgroundColor: 'rgba(239, 68, 68, 0.8)'
             }
         };
         
         return colorMap[employeeName] || {
-            borderColor: 'rgba(156, 163, 175, 1)',      // Cinza padrão
-            backgroundColor: 'rgba(156, 163, 175, 0.1)'
+            borderColor: 'rgba(107, 114, 128, 1)',      // ✅ CINZA ESCURO
+            backgroundColor: 'rgba(107, 114, 128, 0.8)'
         };
     },
 
@@ -1077,6 +1093,83 @@ window.ExcelDashboard = {
             }
         } else {
             console.log('❌ Nenhum dado encontrado');
+        }
+    },
+
+    // ✅ ADICIONAR: Debug específico para duplicação
+    debugDuplication() {
+        console.log('🔍 === DEBUG DUPLICAÇÃO ===');
+        
+        if (!this.state.data || !this.state.data.employees) {
+            console.log('❌ Nenhum dado para analisar');
+            return;
+        }
+        
+        Object.entries(this.state.data.employees).forEach(([employeeName, empData]) => {
+            console.log(`\n👤 === ANÁLISE ${employeeName} ===`);
+            
+            // Verificar registros individuais
+            if (empData.records && Array.isArray(empData.records)) {
+                console.log(`📋 ${empData.records.length} registros individuais:`);
+                
+                // Agrupar por mês para verificar duplicação
+                const recordsByMonth = {};
+                empData.records.forEach((record, index) => {
+                    const month = record.month || this.getMonthFromDate(record.date);
+                    if (!recordsByMonth[month]) {
+                        recordsByMonth[month] = [];
+                    }
+                    recordsByMonth[month].push({
+                        index: index,
+                        date: record.date,
+                        points: record.points,
+                        month: month
+                    });
+                });
+                
+                console.log('📅 Registros agrupados por mês:');
+                Object.entries(recordsByMonth).forEach(([month, records]) => {
+                    const totalPoints = records.reduce((sum, r) => sum + r.points, 0);
+                    console.log(`  ${month}: ${records.length} registros, ${totalPoints} pontos totais`);
+                    records.forEach(record => {
+                        console.log(`    - Registro ${record.index}: ${record.date} = ${record.points} pontos`);
+                    });
+                });
+            }
+            
+            // Verificar dados por mês (se existirem)
+            if (empData.months) {
+                console.log('📅 Dados por mês (backend):');
+                Object.entries(empData.months).forEach(([month, data]) => {
+                    console.log(`  ${month}: ${data.points || data.total || 0} pontos`);
+                });
+            }
+        });
+    },
+
+    // ✅ ADICIONAR: Debug para processamento de meses
+    debugMonthProcessing() {
+        console.log('🔍 === DEBUG PROCESSAMENTO DE MESES ===');
+        
+        const months = this.getMonthsFromExcelData();
+        console.log('📅 Meses extraídos:', months);
+        
+        if (this.state.data && this.state.data.employees) {
+            Object.entries(this.state.data.employees).forEach(([employeeName, empData]) => {
+                console.log(`\n👤 === PROCESSAMENTO ${employeeName} ===`);
+                
+                const monthlyData = this.processEmployeeRecords(empData, months);
+                console.log(`📊 Dados mensais para ${employeeName}:`, monthlyData);
+                
+                // Verificar se há valores duplicados
+                const nonZeroValues = monthlyData.filter(val => val > 0);
+                console.log(`📈 Valores não-zero:`, nonZeroValues);
+                
+                if (nonZeroValues.length > 0) {
+                    const sum = nonZeroValues.reduce((a, b) => a + b, 0);
+                    console.log(`📊 Soma total: ${sum}`);
+                }
+            });
         }
     },
 
@@ -1403,6 +1496,8 @@ document.addEventListener('DOMContentLoaded', () => {
 console.log('🔧 === EXCEL DASHBOARD DEBUG ===');
 console.log('Comandos disponíveis:');
 console.log('  window.ExcelDashboard.debugDataStructure() - Analisar estrutura dos dados');
+console.log('  window.ExcelDashboard.debugDuplication() - Debug específico para duplicação');
+console.log('  window.ExcelDashboard.debugMonthProcessing() - Debug para processamento de meses');
 console.log('  window.ExcelDashboard.clearData() - Limpar dados');
 console.log('  window.ExcelDashboard.loadFolder() - Carregar pasta Excel (DADOS REAIS)');
 console.log('  window.ExcelDashboard.debugLoadFolder() - Debugar a função loadFolder');
@@ -1415,4 +1510,4 @@ console.log('  window.ExcelDashboard.fixInitialLoadingState() - Corrigir estado 
 console.log('  window.ExcelDashboard.testChartsTab() - Testar se a aba Gráficos está funcionando');
 console.log('  window.ExcelDashboard.forceShowCards() - Forçar exibição dos cards (SEM DADOS FALSOS)');
 
-// ===== FIM DO JAVASCRIPT OTIMIZADO PARA ABA EXCEL ===== 
+// ===== FIM DO JAVASCRIPT OTIMIZADO PARA ABA EXCEL =====
