@@ -1,30 +1,29 @@
+// IMPORTANTE: Adicionar <script src="static/js/chart-optimized.js"></script> no template
 // Função para inicializar os gráficos do dashboard do funcionário
 function initEmployeeDashboard(monthlyData, weeklyData) {
     // Gráfico de evolução mensal
     if (document.getElementById('monthlyChart')) {
-      var monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-      var monthlyChart = new Chart(monthlyCtx, {
+      var monthlyChart = createOptimizedChart('monthlyChart', {
+        labels: monthlyData.labels,
+        datasets: [{
+          label: 'Pontos',
+          data: monthlyData.points,
+          borderColor: '#3a6ff7',
+          backgroundColor: 'rgba(58, 111, 247, 0.1)',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true
+        }, {
+          label: 'Meta',
+          data: monthlyData.goals,
+          borderColor: 'rgba(233, 185, 73, 0.7)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0
+        }]
+      }, {
         type: 'line',
-        data: {
-          labels: monthlyData.labels,
-          datasets: [{
-            label: 'Pontos',
-            data: monthlyData.points,
-            borderColor: '#3a6ff7',
-            backgroundColor: 'rgba(58, 111, 247, 0.1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          }, {
-            label: 'Meta',
-            data: monthlyData.goals,
-            borderColor: 'rgba(233, 185, 73, 0.7)',
-            borderWidth: 2,
-            borderDash: [5, 5],
-            fill: false,
-            pointRadius: 0
-          }]
-        },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -65,31 +64,29 @@ function initEmployeeDashboard(monthlyData, weeklyData) {
   
     // Gráfico de desempenho semanal
     if (document.getElementById('weeklyChart')) {
-      var weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
-      var weeklyChart = new Chart(weeklyCtx, {
+      var weeklyChart = createOptimizedChart('weeklyChart', {
+        labels: weeklyData.labels,
+        datasets: [{
+          label: 'Pontos',
+          data: weeklyData.points,
+          backgroundColor: [
+            'rgba(58, 111, 247, 0.7)',
+            'rgba(56, 161, 105, 0.7)',
+            'rgba(233, 185, 73, 0.7)',
+            'rgba(229, 62, 62, 0.7)',
+            'rgba(128, 90, 213, 0.7)'
+          ],
+          borderColor: [
+            'rgba(58, 111, 247, 1)',
+            'rgba(56, 161, 105, 1)',
+            'rgba(233, 185, 73, 1)',
+            'rgba(229, 62, 62, 1)',
+            'rgba(128, 90, 213, 1)'
+          ],
+          borderWidth: 1
+        }]
+      }, {
         type: 'bar',
-        data: {
-          labels: weeklyData.labels,
-          datasets: [{
-            label: 'Pontos',
-            data: weeklyData.points,
-            backgroundColor: [
-              'rgba(58, 111, 247, 0.7)',
-              'rgba(56, 161, 105, 0.7)',
-              'rgba(233, 185, 73, 0.7)',
-              'rgba(229, 62, 62, 0.7)',
-              'rgba(128, 90, 213, 0.7)'
-            ],
-            borderColor: [
-              'rgba(58, 111, 247, 1)',
-              'rgba(56, 161, 105, 1)',
-              'rgba(233, 185, 73, 1)',
-              'rgba(229, 62, 62, 1)',
-              'rgba(128, 90, 213, 1)'
-            ],
-            borderWidth: 1
-          }]
-        },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -157,6 +154,7 @@ function initEmployeeDashboard(monthlyData, weeklyData) {
       }
     }
 
+    const successMsg = document.querySelector('.success-message');
     if(successMsg){
         // Add classe toast para centralizar
         successMsg.classList.add('toast');

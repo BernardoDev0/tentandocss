@@ -5,150 +5,142 @@ from utils.calculations import get_week_dates, get_current_week
 from flask import current_app
 
 def get_weekly_progress_data():
-    """Retorna dados de progresso semanal para gráficos"""
+    """OTIMIZADO: Busca dados semanais com consulta única"""
     try:
+        current_app.logger.info("Iniciando busca de dados semanais otimizada")
+        
+        # Buscar todos os funcionários de uma vez
         employees = Employee.query.all()
         current_app.logger.info(f"Funcionários encontrados: {len(employees)}")
         
-        if not employees:
-            return {'labels': [], 'datasets': []}
+        # Buscar TODOS os registros de uma vez (otimização agressiva)
+        all_entries = Entry.query.all()
+        current_app.logger.info(f"Total de registros carregados: {len(all_entries)}")
         
-        # Últimas 5 semanas - ATUALIZADO
-        current_week = get_current_week()
-        weeks = []
+        # Processar dados em memória (muito mais rápido)
+        employee_data = {emp.id: emp.real_name for emp in employees}
+        weekly_data = {emp.id: [0] * 5 for emp in employees}  # 5 semanas
         
-        # Gerar semanas de 1 a 5 sempre, independente da semana atual
-        for i in range(1, 6):  # Mudança: de range(1, 5) para range(1, 6)
-            weeks.append(str(i))
+        # Calcular datas das semanas
+        from utils.calculations import get_week_dates
+        week_dates = []
+        for week in range(1, 6):
+            start_date, end_date = get_week_dates(str(week))
+            week_dates.append((start_date, end_date))
+            current_app.logger.info(f"Processando semana {week}: {start_date} até {end_date}")
         
-        current_app.logger.info(f"Semanas para análise: {weeks}")
+        # Processar todos os registros de uma vez
+        for entry in all_entries:
+            entry_date = entry.date
+            if hasattr(entry_date, 'strftime'):
+                entry_date_str = entry_date.strftime('%Y-%m-%d')
+            else:
+                entry_date_str = str(entry_date)[:10]  # Pegar apenas a data
+            
+            # Encontrar em qual semana está
+            for week_idx, (start_date, end_date) in enumerate(week_dates):
+                if start_date <= entry_date_str <= end_date:
+                    if entry.employee_id in weekly_data:
+                        weekly_data[entry.employee_id][week_idx] += entry.points
+                    break
         
+        # Preparar dados para Chart.js
         datasets = []
+        labels = [f"Semana {i}" for i in range(1, 6)]
         
         for employee in employees:
-            if not employee or not employee.real_name:
-                continue
-                
-            data = []
-            has_data = False
+            if employee.id in weekly_data:
+                dataset = {
+                    'label': employee.real_name,
+                    'data': weekly_data[employee.id],
+                    'borderColor': f'hsl({hash(employee.real_name) % 360}, 70%, 50%)',
+                    'backgroundColor': f'hsla({hash(employee.real_name) % 360}, 70%, 50%, 0.1)',
+                    'tension': 0.4
+                }
+                datasets.append(dataset)
             
-            for week in weeks:
-                try:
-                    start_date, end_date = get_week_dates(week)
-                    current_app.logger.info(f"Buscando dados de {employee.real_name} para semana {week}: {start_date} até {end_date}")
-                    
-                    # Buscar entradas diretamente
-                    entries = Entry.query.filter(
-                        Entry.employee_id == employee.id,
-                        Entry.date >= start_date,
-                        Entry.date <= end_date
-                    ).all()
-                    
-                    weekly_points = sum(entry.points for entry in entries)
-                    current_app.logger.info(f"Pontos encontrados para {employee.real_name} semana {week}: {weekly_points}")
-                    
-                    data.append(float(weekly_points))
-                    
-                    if weekly_points > 0:
-                        has_data = True
-                        
-                except Exception as e:
-                    current_app.logger.error(f"Erro ao processar semana {week} para {employee.real_name}: {str(e)}")
-                    data.append(0.0)
-            
-            # Adicionar dataset mesmo se não tiver dados (para mostrar funcionário)
-            colors = get_employee_color(employee.real_name)
-            
-            datasets.append({
-                'label': str(employee.real_name),
-                'data': data,
-                'borderColor': colors['border'],
-                'backgroundColor': colors['bg'],
-                'tension': 0.4,
-                'fill': False
-            })
-            
-            current_app.logger.info(f"Dataset criado para {employee.real_name}: {data}")
+        current_app.logger.info(f"Resultado final semanal: {len(datasets)} datasets, {len(labels)} labels")
         
-        result = {
-            'labels': [f'Semana {w}' for w in weeks],
+        return {
+            'labels': labels,
             'datasets': datasets
         }
         
-        current_app.logger.info(f"Resultado final semanal: {len(datasets)} datasets, {len(weeks)} labels")
-        return result
-        
     except Exception as e:
-        current_app.logger.error(f"Erro ao obter dados de progresso semanal: {str(e)}")
-        import traceback
-        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+        current_app.logger.error(f"Erro ao obter dados semanais: {str(e)}")
         return {'labels': [], 'datasets': []}
 
-def get_monthly_evolution_data(employee_id=None):
-    """Retorna dados de evolução mensal"""
+def get_monthly_evolution_data():
+    """OTIMIZADO: Busca dados mensais com consulta única"""
     try:
-        if employee_id:
-            employees = [Employee.query.get(employee_id)]
-        else:
-            employees = Employee.query.all()
+        current_app.logger.info("Iniciando busca de dados mensais otimizada")
         
+        # Buscar todos os funcionários de uma vez
+        employees = Employee.query.all()
         current_app.logger.info(f"Funcionários para dados mensais: {len(employees)}")
         
-        if not employees:
-            return {'labels': [], 'datasets': []}
+        # Buscar TODOS os registros de uma vez
+        all_entries = Entry.query.all()
+        current_app.logger.info(f"Total de registros para processamento mensal: {len(all_entries)}")
         
-        # Sempre mostrar 5 semanas (semanas 1-5)
-        weeks_in_month = ['1', '2', '3', '4', '5']
+        # Processar dados em memória
+        employee_data = {emp.id: emp.real_name for emp in employees}
+        monthly_data = {emp.id: [0] * 5 for emp in employees}  # 5 meses
         
-        current_app.logger.info(f"Semanas do mês: {weeks_in_month}")
+        # Calcular datas dos meses (últimos 5 meses)
+        from datetime import datetime, timedelta
+        month_dates = []
+        today = datetime.now()
         
+        for i in range(5):
+            month_date = today - timedelta(days=30*i)
+            month_start = month_date.replace(day=26)
+            if i == 0:
+                month_end = today
+            else:
+                month_end = month_start + timedelta(days=30)
+            month_dates.append((month_start.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d')))
+        
+        # Processar todos os registros de uma vez
+        for entry in all_entries:
+            entry_date = entry.date
+            if hasattr(entry_date, 'strftime'):
+                entry_date_str = entry_date.strftime('%Y-%m-%d')
+            else:
+                entry_date_str = str(entry_date)[:10]
+            
+            # Encontrar em qual mês está
+            for month_idx, (start_date, end_date) in enumerate(month_dates):
+                if start_date <= entry_date_str <= end_date:
+                    if entry.employee_id in monthly_data:
+                        monthly_data[entry.employee_id][month_idx] += entry.points
+                    break
+        
+        # Preparar dados para Chart.js
         datasets = []
+        labels = [f"Semana {i+1}" for i in range(5)]
         
         for employee in employees:
-            if not employee or not employee.real_name:
-                continue
-                
-            data = []
-            
-            for week in weeks_in_month:
-                try:
-                    start_date, end_date = get_week_dates(week)
-                    
-                    entries = Entry.query.filter(
-                        Entry.employee_id == employee.id,
-                        Entry.date >= start_date,
-                        Entry.date <= end_date
-                    ).all()
-                    
-                    weekly_points = sum(entry.points for entry in entries)
-                    data.append(float(weekly_points))
-                    
-                except Exception as e:
-                    current_app.logger.error(f"Erro ao processar semana {week} para {employee.real_name}: {str(e)}")
-                    data.append(0.0)
-            
-            colors = get_employee_color(employee.real_name)
-            
-            datasets.append({
-                'label': str(employee.real_name),
-                'data': data,
-                'borderColor': colors['border'],
-                'backgroundColor': colors['bg'],
-                'tension': 0.4
-            })
+            if employee.id in monthly_data:
+                dataset = {
+                    'label': employee.real_name,
+                    'data': monthly_data[employee.id],
+                    'borderColor': f'hsl({hash(employee.real_name) % 360}, 70%, 50%)',
+                    'backgroundColor': f'hsla({hash(employee.real_name) % 360}, 70%, 50%, 0.1)',
+                    'tension': 0.4
+                }
+                datasets.append(dataset)
+                current_app.logger.info(f"Dataset criado para {employee.real_name}: {monthly_data[employee.id]}")
         
-        result = {
-            'labels': [f'Semana {w}' for w in weeks_in_month],
+        current_app.logger.info(f"Resultado final mensal: {len(datasets)} datasets")
+        
+        return {
+            'labels': labels,
             'datasets': datasets
         }
         
-        current_app.logger.info(f"Resultado final mensal: {len(datasets)} datasets")
-        return result
-        
     except Exception as e:
-        current_app.logger.error(f"Erro ao obter evolução mensal: {str(e)}")
-        import traceback
-        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+        current_app.logger.error(f"Erro ao obter dados mensais: {str(e)}")
         return {'labels': [], 'datasets': []}
 
 def get_daily_data(employee_id=None, week=None):
@@ -254,20 +246,11 @@ def get_weekly_evolution_data(employee_id=None):
 
 def get_employee_color(employee_name):
     """Retorna um esquema de cores para o funcionário"""
-    # Cores mais vibrantes e menos transparentes
+    # Cores únicas e distintas para os funcionários reais do sistema
     colors = {
-        'Bernardo': {'border': '#4A90E2', 'bg': 'rgba(74, 144, 226, 0.6)'},
-        'Matheus': {'border': '#50E3C2', 'bg': 'rgba(80, 227, 194, 0.6)'},
-        'João': {'border': '#F5A623', 'bg': 'rgba(245, 166, 35, 0.6)'},
-        'Maria': {'border': '#BD10E0', 'bg': 'rgba(189, 16, 224, 0.6)'},
-        'Pessoa Teste': {'border': '#9B9B9B', 'bg': 'rgba(155, 155, 155, 0.6)'},
-        'Luiza': {'border': '#7ED321', 'bg': 'rgba(126, 211, 33, 0.6)'},
-        'Carlos': {'border': '#F8E71C', 'bg': 'rgba(248, 231, 28, 0.6)'},
-        'Ana': {'border': '#FF69B4', 'bg': 'rgba(255, 105, 180, 0.6)'},
-        'Pedro': {'border': '#8B572A', 'bg': 'rgba(139, 87, 42, 0.6)'},
-        'Juliana': {'border': '#4A4A4A', 'bg': 'rgba(74, 74, 74, 0.6)'},
-        'Rodrigo': {'border': '#FF6384', 'bg': 'rgba(255, 99, 132, 0.6)'}, 
-        'Maurício': {'border': '#36A2EB', 'bg': 'rgba(54, 162, 235, 0.6)'}, 
-        'Wesley': {'border': '#FFCE56', 'bg': 'rgba(255, 206, 86, 0.6)'}   
+        'Rodrigo': {'border': '#9333EA', 'bg': 'rgba(147, 51, 234, 0.6)'}, # ✅ ROXO
+        'Maurício': {'border': '#3B82F6', 'bg': 'rgba(59, 130, 246, 0.6)'}, # ✅ AZUL
+        'Matheus': {'border': '#22C55E', 'bg': 'rgba(34, 197, 94, 0.6)'},   # ✅ VERDE
+        'Wesley': {'border': '#EF4444', 'bg': 'rgba(239, 68, 68, 0.6)'}     # ✅ VERMELHO
     }
     return colors.get(employee_name, {'border': '#9B9B9B', 'bg': 'rgba(155, 155, 155, 0.6)'})

@@ -6,7 +6,24 @@
     <title>Dashboard de {{ employee.real_name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/employee_dashboard.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js e plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    
+    <!-- CSS inline para glass-table -->
+    <style>
+        :root {
+            --text-primary: #f8fafc;
+            --text-secondary: #e2e8f0;
+            --glass-border: rgba(148,163,184,0.2);
+            --radius-lg: 16px;
+        }
+        .glass-table{width:100%;border-collapse:collapse;background:rgba(30,41,59,0.35);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);overflow:hidden}
+        .glass-table th{padding:0.75rem 0.9rem;text-align:center;background:rgba(30,41,59,0.75);color:var(--text-primary);font-weight:600;font-size:0.9rem}
+        .glass-table td{padding:0.65rem 0.9rem;border-bottom:1px solid rgba(148,163,184,0.15);color:var(--text-secondary);font-size:0.85rem}
+        .glass-table tbody tr:hover{background:rgba(255,255,255,0.03)}
+    </style>
 </head>
 <body class="dashboard-employee">
     <div class="container">
@@ -140,39 +157,70 @@
     
     <div id="history" class="tab-content">
     <h2>Seus Registros</h2>
-    {% if entries %}
-    <table>
-    <thead>
-    <tr>
-    <th>Data</th>
-    <th>Refinaria</th>
-    <th>Pontos</th>
-    <th>Observações</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for entry in entries %}
-    <tr>
-    <td>{{ entry.date }}</td>
-    <td>{{ entry.refinery }}</td>
-    <td>{{ entry.points }}</td>
-    <td>{{ entry.observations }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-    </table>
-    {% else %}
-    <p>Nenhum registro encontrado.</p>
-    {% endif %}
+    <div class="records-card" style="background:rgba(15,23,42,0.9);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:1rem;overflow:auto">
+        <table class="glass-table">
+            <thead>
+                <tr style="background:rgba(30,41,59,0.85)">
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Refinaria</th>
+                    <th>Pontos</th>
+                    <th>Observações</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if entries %}
+            {% for entry in entries %}
+            <tr>
+                <td>
+                    {% if ' ' in entry.date %}
+                        {% set date_part = entry.date.split(' ')[0] %}
+                        {% set parts = date_part.split('-') %}
+                        {{ parts[2] }}/{{ parts[1] }}/{{ parts[0] }}
+                    {% else %}
+                        {% set parts = entry.date.split('-') %}
+                        {{ parts[2] }}/{{ parts[1] }}/{{ parts[0] }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if ' ' in entry.date and len(entry.date.split(' ')) > 1 %}
+                        {% set time_part = entry.date.split(' ')[1] %}
+                        {% if ':' in time_part %}
+                            {{ time_part[:5] }}
+                        {% else %}
+                            {{ time_part }}
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ entry.refinery }}</td>
+                <td>{{ entry.points }}</td>
+                <td>{{ entry.observations or '' }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align:center;padding:1rem">Nenhum registro encontrado.</td>
+            </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
     </div>
     </div>
     
     <!-- Carregando o JavaScript externo -->
+    <script src="{{ url_for('static', filename='js/chart-optimized.js') }}"></script>
     <script src="{{ url_for('static', filename='employee_dashboard.js') }}"></script>
     <script>
     // Dados para os gráficos
     var monthlyData = JSON.parse('{{ monthly_data|tojson|safe }}');
     var weeklyData = JSON.parse('{{ weekly_data|tojson|safe }}');
+    
+    // DEBUG: Log dos dados
+    console.log('DEBUG: monthlyData =', monthlyData);
+    console.log('DEBUG: weeklyData =', weeklyData);
     
     // Mostra toast se houver mensagem de sucesso
     document.addEventListener('DOMContentLoaded', function(){
@@ -184,6 +232,9 @@
     
     // Inicializar gráficos
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DEBUG: Inicializando gráficos...');
+        console.log('DEBUG: monthlyData =', monthlyData);
+        console.log('DEBUG: weeklyData =', weeklyData);
         initEmployeeDashboard(monthlyData, weeklyData);
     });
     </script>

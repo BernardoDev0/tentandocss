@@ -1,19 +1,53 @@
-class CEODashboard {
+// IMPORTANTE: Adicionar <script src="static/js/chart-optimized.js"></script> no template
+// Verificar se a classe já existe antes de declarar
+if (typeof window.CEODashboard === 'undefined') {
+  window.CEODashboard = class {
     constructor() {
-        this.charts = {};
-        this.isInitialized = false;
-        
-        // Registrar o plugin de anotação para Chart.js 4.x
-        if (typeof Chart !== 'undefined' && window['chartjs-plugin-annotation']) {
-            Chart.register(window['chartjs-plugin-annotation']);
-            console.log('Annotation plugin registered successfully (v4)');
-        } else {
-            console.error('Chart.js or annotation plugin not found');
-        }
+      this.charts = {};
+      this.isInitialized = false;
+      
+      // Aguardar Chart.js estar disponível antes de configurar
+      this.waitForChartJS();
+    }
 
-        // Desativar animações globais do Chart.js
-        if (typeof Chart !== 'undefined') {
-            Chart.defaults.animation = { duration: 800 };
+    // Aguardar Chart.js estar disponível
+    async waitForChartJS() {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 segundos máximo
+        
+        const checkChartJS = () => {
+            if (typeof Chart !== 'undefined') {
+                this.initializeChartJS();
+                return;
+            }
+            
+            attempts++;
+            if (attempts < maxAttempts) {
+                setTimeout(checkChartJS, 100);
+            } else {
+                console.error('Chart.js não foi carregado após timeout');
+            }
+        };
+        
+        checkChartJS();
+    }
+
+    // Inicializar configurações do Chart.js
+    initializeChartJS() {
+        try {
+            // Registrar o plugin de anotação para Chart.js 4.x
+            if (window['chartjs-plugin-annotation']) {
+                Chart.register(window['chartjs-plugin-annotation']);
+                console.log('Annotation plugin registered successfully (v4)');
+            } else {
+                console.warn('Annotation plugin not found - charts will work without annotations');
+            }
+
+            // ✅ CORREÇÃO: NÃO CONFIGURAR ANIMAÇÕES GLOBAIS - deixa a aba Gráficos funcionar
+            // Configurar apenas o essencial sem afetar outros gráficos
+            console.log('Chart.js configurado sem interferir na aba Gráficos');
+        } catch (error) {
+            console.error('Erro ao configurar Chart.js:', error);
         }
     }
 
@@ -129,8 +163,46 @@ class CEODashboard {
                 plugins: {
                     legend: {
                         position: 'top',
+                        display: true, // HABILITAR LEGENDAS
                         labels: {
-                            color: '#ffffff'
+                            color: '#ffffff',
+                            usePointStyle: true,
+                            padding: 10,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        onClick: function(e, legendItem, legend) {
+                            // TORNAR LEGENDAS CLICÁVEIS - CORREÇÃO
+                            const index = legendItem.datasetIndex; // ✅ CORREÇÃO: datasetIndex em vez de index
+                            const ci = legend.chart;
+                            const meta = ci.getDatasetMeta(index);
+                            
+                            // ANIMAÇÃO OTIMIZADA PARA LEGENDAS
+                            const originalOpacity = meta.hidden ? 0 : 1;
+                            const targetOpacity = meta.hidden ? 1 : 0;
+                            
+                            // Configurar animação suave
+                            ci.options.animation = {
+                                duration: 300, // 300ms - otimizado
+                                easing: 'easeInOutQuart'
+                            };
+                            
+                            // Toggle visibility com animação
+                            meta.hidden = !meta.hidden;
+                            
+                            // Aplicar transição de opacidade
+                            if (meta.dataset) {
+                                meta.dataset.hidden = meta.hidden;
+                            }
+                            
+                            // Atualizar com animação
+                            ci.update('active');
+                            
+                            // Resetar animação após conclusão
+                            setTimeout(() => {
+                                ci.options.animation.duration = 0; // Desabilitar para performance
+                            }, 350);
                         }
                     },
                     annotation: {
@@ -161,7 +233,10 @@ class CEODashboard {
                         },
                         grid: {
                             color: 'rgba(255, 255, 255, 0.1)'
-                        }
+                        },
+                        // CONFIGURAÇÕES ESPECÍFICAS PARA BARRAS
+                        categoryPercentage: 0.8, // Largura das categorias
+                        barPercentage: 0.9 // Largura das barras
                     },
                     y: {
                         ticks: {
@@ -170,6 +245,25 @@ class CEODashboard {
                         grid: {
                             color: 'rgba(255, 255, 255, 0.1)'
                         }
+                    }
+                },
+                // CONFIGURAÇÕES ESPECÍFICAS PARA BARRAS
+                elements: {
+                    bar: {
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        backgroundColor: [
+                            'rgba(147, 51, 234, 0.8)', // Rodrigo - Roxo
+                            'rgba(59, 130, 246, 0.8)', // Maurício - Azul
+                            'rgba(34, 197, 94, 0.8)',  // Matheus - Verde
+                            'rgba(239, 68, 68, 0.8)'   // Wesley - Vermelho
+                        ],
+                        borderColor: [
+                            'rgba(147, 51, 234, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ]
                     }
                 },
                 animation: {
@@ -185,8 +279,46 @@ class CEODashboard {
                 plugins: {
                     legend: {
                         position: 'top',
+                        display: true, // HABILITAR LEGENDAS
                         labels: {
-                            color: '#ffffff'
+                            color: '#ffffff',
+                            usePointStyle: true,
+                            padding: 10,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        onClick: function(e, legendItem, legend) {
+                            // TORNAR LEGENDAS CLICÁVEIS - CORREÇÃO
+                            const index = legendItem.datasetIndex; // ✅ CORREÇÃO: datasetIndex em vez de index
+                            const ci = legend.chart;
+                            const meta = ci.getDatasetMeta(index);
+                            
+                            // ANIMAÇÃO OTIMIZADA PARA LEGENDAS
+                            const originalOpacity = meta.hidden ? 0 : 1;
+                            const targetOpacity = meta.hidden ? 1 : 0;
+                            
+                            // Configurar animação suave
+                            ci.options.animation = {
+                                duration: 300, // 300ms - otimizado
+                                easing: 'easeInOutQuart'
+                            };
+                            
+                            // Toggle visibility com animação
+                            meta.hidden = !meta.hidden;
+                            
+                            // Aplicar transição de opacidade
+                            if (meta.dataset) {
+                                meta.dataset.hidden = meta.hidden;
+                            }
+                            
+                            // Atualizar com animação
+                            ci.update('active');
+                            
+                            // Resetar animação após conclusão
+                            setTimeout(() => {
+                                ci.options.animation.duration = 0; // Desabilitar para performance
+                            }, 350);
                         }
                     },
                     annotation: {
@@ -241,8 +373,46 @@ class CEODashboard {
                 plugins: {
                     legend: {
                         position: 'top',
+                        display: true, // HABILITAR LEGENDAS
                         labels: {
-                            color: '#ffffff'
+                            color: '#ffffff',
+                            usePointStyle: true,
+                            padding: 10,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        onClick: function(e, legendItem, legend) {
+                            // TORNAR LEGENDAS CLICÁVEIS - CORREÇÃO
+                            const index = legendItem.datasetIndex; // ✅ CORREÇÃO: datasetIndex em vez de index
+                            const ci = legend.chart;
+                            const meta = ci.getDatasetMeta(index);
+                            
+                            // ANIMAÇÃO OTIMIZADA PARA LEGENDAS
+                            const originalOpacity = meta.hidden ? 0 : 1;
+                            const targetOpacity = meta.hidden ? 1 : 0;
+                            
+                            // Configurar animação suave
+                            ci.options.animation = {
+                                duration: 300, // 300ms - otimizado
+                                easing: 'easeInOutQuart'
+                            };
+                            
+                            // Toggle visibility com animação
+                            meta.hidden = !meta.hidden;
+                            
+                            // Aplicar transição de opacidade
+                            if (meta.dataset) {
+                                meta.dataset.hidden = meta.hidden;
+                            }
+                            
+                            // Atualizar com animação
+                            ci.update('active');
+                            
+                            // Resetar animação após conclusão
+                            setTimeout(() => {
+                                ci.options.animation.duration = 0; // Desabilitar para performance
+                            }, 350);
                         }
                     },
                     annotation: {
@@ -274,12 +444,13 @@ class CEODashboard {
                         grid: {
                             color: 'rgba(255, 255, 255, 0.1)'
                         },
-                        categoryPercentage: 0.9,
-                        barPercentage: 0.8
+                        // CONFIGURAÇÕES ESPECÍFICAS PARA BARRAS
+                        categoryPercentage: 0.8, // Largura das categorias
+                        barPercentage: 0.9 // Largura das barras
                     },
                     y: {
                         min: 0,
-                        max: 800,
+                        max: 1200, // AUMENTADO DE 800 PARA 1200
                         ticks: {
                             color: '#ffffff',
                             stepSize: 100
@@ -289,10 +460,23 @@ class CEODashboard {
                         }
                     }
                 },
+                // CONFIGURAÇÕES ESPECÍFICAS PARA BARRAS
                 elements: {
                     bar: {
-                        borderWidth: 1,
-                        borderRadius: 4
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        backgroundColor: [
+                            'rgba(147, 51, 234, 0.8)', // Rodrigo - Roxo
+                            'rgba(59, 130, 246, 0.8)', // Maurício - Azul
+                            'rgba(34, 197, 94, 0.8)',  // Matheus - Verde
+                            'rgba(239, 68, 68, 0.8)'   // Wesley - Vermelho
+                        ],
+                        borderColor: [
+                            'rgba(147, 51, 234, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ]
                     }
                 },
                 animation: {
@@ -316,15 +500,12 @@ class CEODashboard {
             
             // Criar gráficos com try/catch para logar erros
             try {
-                this.charts.weekly = new Chart(weeklyCanvas, {
+                this.charts.weekly = createOptimizedChart('weeklyChart', weeklyData, {
                     type: 'bar',
-                    data: weeklyData,
-                    options: {
-                        ...weeklyChartOptions,
-                        plugins: {
-                            ...weeklyChartOptions.plugins,
-                            tooltip: { enabled: true }
-                        }
+                    ...weeklyChartOptions,
+                    plugins: {
+                        ...weeklyChartOptions.plugins,
+                        tooltip: { enabled: true }
                     }
                 });
             } catch (e) {
@@ -338,15 +519,12 @@ class CEODashboard {
             if (typeof removeChartLoading === 'function') removeChartLoading('weeklyChart');
             
             try {
-                this.charts.monthly = new Chart(monthlyCanvas, {
+                this.charts.monthly = createOptimizedChart('monthlyChart', monthlyData, {
                     type: 'line',
-                    data: monthlyData,
-                    options: {
-                        ...monthlyChartOptions,
-                        plugins: {
-                            ...monthlyChartOptions.plugins,
-                            tooltip: { enabled: true }
-                        }
+                    ...monthlyChartOptions,
+                    plugins: {
+                        ...monthlyChartOptions.plugins,
+                        tooltip: { enabled: true }
                     }
                 });
             } catch (e) {
@@ -360,15 +538,12 @@ class CEODashboard {
             if (typeof removeChartLoading === 'function') removeChartLoading('monthlyChart');
             
             try {
-                this.charts.daily = new Chart(dailyCanvas, {
+                this.charts.daily = createOptimizedChart('dailyChart', dailyData, {
                     type: 'bar',
-                    data: dailyData,
-                    options: {
-                        ...dailyChartOptions,
-                        plugins: {
-                            ...dailyChartOptions.plugins,
-                            tooltip: { enabled: true }
-                        }
+                    ...dailyChartOptions,
+                    plugins: {
+                        ...dailyChartOptions.plugins,
+                        tooltip: { enabled: true }
                     }
                 });
             } catch (e) {
@@ -457,6 +632,7 @@ class CEODashboard {
             button.classList.toggle('meta-hidden', !visible);
         }
     }
+  };
 }
 
 // Adicionar função de debounce
@@ -472,16 +648,68 @@ function debounce(func, wait) {
     };
 }
 
-setTimeout(function() {
-    window.dashboardInstance = new CEODashboard();
-    console.log('window.dashboardInstance criado:', window.dashboardInstance);
-    document.getElementById('toggle-weekly-meta')?.addEventListener('click', function() {
-        window.dashboardInstance.toggleGoalLine('weekly');
+// Função para adicionar event listeners dos botões de meta
+function addMetaButtonListeners() {
+    console.log('Tentando adicionar listeners dos botões de meta...');
+    
+    if (!window.dashboardInstance) {
+        console.error('dashboardInstance não encontrado');
+        return;
+    }
+    
+    const weeklyBtn = document.getElementById('toggle-weekly-meta');
+    const monthlyBtn = document.getElementById('toggle-monthly-meta');
+    const dailyBtn = document.getElementById('toggle-daily-meta');
+    
+    console.log('Botões encontrados:', {
+        weekly: !!weeklyBtn,
+        monthly: !!monthlyBtn,
+        daily: !!dailyBtn
     });
-    document.getElementById('toggle-monthly-meta')?.addEventListener('click', function() {
-        window.dashboardInstance.toggleGoalLine('monthly');
-    });
-    document.getElementById('toggle-daily-meta')?.addEventListener('click', function() {
-        window.dashboardInstance.toggleGoalLine('daily');
-    });
-}, 500);
+    
+    if (weeklyBtn) {
+        // Remover listeners existentes para evitar duplicação
+        weeklyBtn.removeEventListener('click', weeklyBtn._metaClickHandler);
+        weeklyBtn._metaClickHandler = function() {
+            console.log('Botão weekly clicado');
+            window.dashboardInstance.toggleGoalLine('weekly');
+        };
+        weeklyBtn.addEventListener('click', weeklyBtn._metaClickHandler);
+        console.log('Listener adicionado ao botão weekly');
+    }
+    
+    if (monthlyBtn) {
+        // Remover listeners existentes para evitar duplicação
+        monthlyBtn.removeEventListener('click', monthlyBtn._metaClickHandler);
+        monthlyBtn._metaClickHandler = function() {
+            console.log('Botão monthly clicado');
+            window.dashboardInstance.toggleGoalLine('monthly');
+        };
+        monthlyBtn.addEventListener('click', monthlyBtn._metaClickHandler);
+        console.log('Listener adicionado ao botão monthly');
+    }
+    
+    if (dailyBtn) {
+        // Remover listeners existentes para evitar duplicação
+        dailyBtn.removeEventListener('click', dailyBtn._metaClickHandler);
+        dailyBtn._metaClickHandler = function() {
+            console.log('Botão daily clicado');
+            window.dashboardInstance.toggleGoalLine('daily');
+        };
+        dailyBtn.addEventListener('click', dailyBtn._metaClickHandler);
+        console.log('Listener adicionado ao botão daily');
+    }
+}
+
+// Criar dashboard instance e adicionar listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, criando dashboard instance...');
+    
+    setTimeout(function() {
+        window.dashboardInstance = new CEODashboard();
+        console.log('window.dashboardInstance criado:', window.dashboardInstance);
+        
+        // Adicionar listeners após um delay para garantir que tudo esteja pronto
+        setTimeout(addMetaButtonListeners, 200);
+    }, 100);
+});

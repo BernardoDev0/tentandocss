@@ -23,9 +23,20 @@ def get_week_dates(week_str):
                 else:
                     cycle_start = today.replace(month=today.month-1, day=26)
             
-            # Calcular início da semana específica
-            week_start = cycle_start + timedelta(days=(week_num - 1) * 7)
-            week_end = week_start + timedelta(days=6)
+            # CORREÇÃO: Calcular semanas corretamente
+            # Semana 1: ciclo_start até ciclo_start + 6 dias
+            # Semana 2: ciclo_start - 7 dias até ciclo_start - 1 dia
+            # Semana 3: ciclo_start - 14 dias até ciclo_start - 8 dias
+            # etc.
+            
+            if week_num == 1:
+                week_start = cycle_start
+                week_end = cycle_start + timedelta(days=6)
+            else:
+                # Para semanas anteriores, voltar no tempo
+                days_back = (week_num - 1) * 7
+                week_start = cycle_start - timedelta(days=days_back)
+                week_end = week_start + timedelta(days=6)
             
             return week_start.strftime('%Y-%m-%d'), week_end.strftime('%Y-%m-%d')
         
@@ -120,17 +131,48 @@ def calculate_weekly_progress(employee_id=None, week_num=None):
         entries = query.all()
         current_app.logger.info(f"Entradas encontradas: {len(entries)}")
 
-        # Agrupar pontos por funcionário
-        employee_totals = {}
-        for entry in entries:
-            emp_name = entry.employee.real_name
-            employee_totals[emp_name] = employee_totals.get(emp_name, 0) + entry.points
+        # Se for um funcionário específico, retornar dados estruturados
+        if employee_id:
+            # Calcular pontos totais
+            total_points = sum(entry.points for entry in entries)
+            
+            # Buscar funcionário para obter meta semanal
+            employee = Employee.query.get(employee_id)
+            weekly_goal = employee.weekly_goal if employee else 0
 
-        current_app.logger.info(f"Totais semanais calculados: {employee_totals}")
-        return employee_totals
+            # Calcular porcentagem de progresso
+            progress_percentage = (total_points / weekly_goal * 100) if weekly_goal > 0 else 0
+            remaining_points = max(0, weekly_goal - total_points)
+
+            return {
+                'current_points': total_points,
+                'weekly_goal': weekly_goal,
+                'progress_percentage': progress_percentage,
+                'remaining_points': remaining_points
+            }
+        else:
+            # Para todos os funcionários, retornar dicionário por nome
+            employee_totals = {}
+            for entry in entries:
+                emp_name = entry.employee.real_name
+                if emp_name not in employee_totals:
+                    employee_totals[emp_name] = 0
+                employee_totals[emp_name] += entry.points
+            
+            current_app.logger.info(f"Totais semanais por funcionário: {employee_totals}")
+            return employee_totals
+
     except Exception as e:
         current_app.logger.error(f"Erro ao calcular progresso semanal: {str(e)}")
-        return {}
+        if employee_id:
+            return {
+                'current_points': 0,
+                'weekly_goal': 0,
+                'progress_percentage': 0,
+                'remaining_points': 0
+            }
+        else:
+            return {}
 
 def calculate_monthly_progress(employee_id=None, month=None, year=None):
     """Calcula o progresso mensal usando ciclos de 26 a 25"""

@@ -39,10 +39,17 @@ def employee_dashboard_enhanced():
         # Garantir que selected_week seja string para comparação no template
         selected_week_str = str(selected_week)
         
+        # Obter nome do funcionário primeiro
+        employee_name = session['real_name']
+        
         # Calcular progresso semanal
         weekly_progress = calculate_weekly_progress(employee_id, selected_week)
-        employee_name = session['real_name']
-        weekly_points = weekly_progress.get(employee_name, 0)
+        # A função retorna um dicionário com dados estruturados quando employee_id é fornecido
+        if isinstance(weekly_progress, dict) and 'current_points' in weekly_progress:
+            weekly_points = weekly_progress['current_points']
+        else:
+            # Fallback para o formato antigo
+            weekly_points = weekly_progress.get(employee_name, 0)
         
         # Calcular progresso mensal
         now = datetime.now(timezone)
@@ -88,29 +95,44 @@ def employee_dashboard_enhanced():
         
         # =================== Dados para gráficos ====================
         weekly_raw = get_weekly_evolution_data(employee_id)
-        monthly_raw = get_monthly_evolution_data(employee_id)
+        monthly_raw = get_monthly_evolution_data()
         daily_data = get_daily_data_by_employee(employee_id, selected_week)
+
+        # DEBUG: Log dos dados brutos
+        current_app.logger.info(f"DEBUG: weekly_raw = {weekly_raw}")
+        current_app.logger.info(f"DEBUG: monthly_raw = {monthly_raw}")
 
         # ---- Weekly data (simplificado) ----
         weekly_points_simple = []
         weekly_labels = []
         if weekly_raw:
             weekly_labels = weekly_raw.get('labels', [])
-            if weekly_raw.get('datasets'):
-                weekly_points_simple = weekly_raw['datasets'][0].get('data', [])
+            # Filtrar apenas os dados do funcionário logado
+            employee_name = employee.real_name
+            for dataset in weekly_raw.get('datasets', []):
+                if dataset.get('label') == employee_name:
+                    weekly_points_simple = dataset.get('data', [])
+                    break
 
         weekly_data = {
             'labels': weekly_labels,
             'points': weekly_points_simple
         }
 
+        # DEBUG: Log dos dados processados
+        current_app.logger.info(f"DEBUG: weekly_data = {weekly_data}")
+
         # ---- Monthly data (simplificado) ----
         monthly_points_simple = []
         monthly_labels = []
         if monthly_raw:
             monthly_labels = monthly_raw.get('labels', [])
-            if monthly_raw.get('datasets'):
-                monthly_points_simple = monthly_raw['datasets'][0].get('data', [])
+            # Filtrar apenas os dados do funcionário logado
+            employee_name = employee.real_name
+            for dataset in monthly_raw.get('datasets', []):
+                if dataset.get('label') == employee_name:
+                    monthly_points_simple = dataset.get('data', [])
+                    break
 
         goals_array = [employee.weekly_goal] * len(monthly_labels)
 
@@ -119,6 +141,9 @@ def employee_dashboard_enhanced():
             'points': monthly_points_simple,
             'goals': goals_array
         }
+
+        # DEBUG: Log dos dados processados
+        current_app.logger.info(f"DEBUG: monthly_data = {monthly_data}")
         # ===========================================================
         
         return render_template(
@@ -192,15 +217,17 @@ def ceo_dashboard_enhanced():
                 'monthly_goal': monthly_goal,
                 'status': status
             }
-        # Calcular total mensal da equipe
+        # Calcular total mensal da equipe (incluindo todos)
         monthly_team_total = sum(monthly_progress.values()) if monthly_progress else 0
 
         # Média de porcentagem da equipe
         if employee_totals:
+            # Excluir Rodrigo do cálculo da média da equipe
             team_average_percentage = sum(
                 (v['weekly_points'] / v['weekly_goal']) * 100 if v['weekly_goal'] else 0
-                for v in employee_totals.values()
-            ) / len(employee_totals)
+                for name, v in employee_totals.items()
+                if name != 'Rodrigo'
+            ) / len([name for name in employee_totals.keys() if name != 'Rodrigo'])
         else:
             team_average_percentage = 0
 

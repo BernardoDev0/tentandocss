@@ -1,0 +1,198 @@
+/* ===== PATCH DE PERFORMANCE PARA ABA EXCEL ===== */
+
+/* Otimizações específicas para aba Excel */
+.excel-dashboard-container {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar cards de estatísticas */
+.excel-stat-card {
+    transition: opacity 0.2s ease-out !important;
+    will-change: opacity !important;
+    transform: none !important;
+    box-shadow: none !important;
+    contain: layout style paint !important;
+}
+
+.excel-stat-card:hover {
+    opacity: 0.9 !important;
+    background: rgba(15, 23, 42, 0.98) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Otimizar container do gráfico */
+.excel-chart-container {
+    contain: layout style paint !important;
+    will-change: auto !important;
+    backdrop-filter: none !important;
+}
+
+/* Otimizar canvas do gráfico */
+.excel-chart-container canvas {
+    image-rendering: optimizeSpeed !important;
+    will-change: auto !important;
+    contain: layout style paint !important;
+}
+
+/* Otimizar botões */
+.excel-chart-container .glass-btn {
+    transition: opacity 0.2s ease-out !important;
+    will-change: opacity !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.excel-chart-container .glass-btn:hover {
+    opacity: 0.9 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Otimizar botão de carregar pasta */
+#load-folder-btn {
+    transition: opacity 0.2s ease-out !important;
+    will-change: opacity !important;
+    transform: none !important;
+}
+
+#load-folder-btn:hover {
+    opacity: 0.9 !important;
+    transform: none !important;
+}
+
+/* Otimizar indicador de loading */
+#loading-indicator {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar mensagens */
+.excel-message {
+    contain: layout style paint !important;
+    will-change: auto !important;
+    animation: none !important;
+    transition: opacity 0.2s ease-out !important;
+}
+
+/* Otimizar header */
+.excel-header {
+    contain: layout style paint !important;
+    will-change: auto !important;
+    backdrop-filter: none !important;
+}
+
+/* Otimizar controles */
+.excel-controls {
+    contain: layout style paint !important;
+    will-change: auto !important;
+    backdrop-filter: none !important;
+}
+
+/* Otimizar grid de estatísticas */
+.excel-stats-grid {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar ícones dos cards */
+.excel-stat-card .stat-icon {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+.excel-stat-card .stat-icon i {
+    transition: none !important;
+    transform: none !important;
+}
+
+/* Otimizar valores dos cards */
+.excel-stat-card .stat-value {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar labels dos cards */
+.excel-stat-card .stat-label {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar detalhes dos cards */
+.excel-stat-card .stat-detail {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar header do gráfico */
+.excel-chart-container .chart-header {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+.excel-chart-container .chart-header h3 {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar controles do gráfico */
+.excel-chart-container .chart-controls {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Otimizar card do gráfico */
+.excel-chart-container .chart-card {
+    contain: layout style paint !important;
+    will-change: auto !important;
+    backdrop-filter: none !important;
+}
+
+/* Otimizar container do canvas */
+.excel-chart-container .chart-container {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* Remove animações desnecessárias */
+.excel-stat-card,
+.excel-chart-container .glass-btn,
+#load-folder-btn,
+.excel-message {
+    animation: none !important;
+}
+
+/* Otimizar para dispositivos móveis */
+@media (hover: none) and (pointer: coarse) {
+    .excel-stat-card:hover {
+        opacity: 1 !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+    }
+    
+    .excel-chart-container .glass-btn:hover {
+        opacity: 1 !important;
+    }
+    
+    #load-folder-btn:hover {
+        opacity: 1 !important;
+    }
+}
+
+/* Reduzir motion */
+@media (prefers-reduced-motion: reduce) {
+    .excel-stat-card,
+    .excel-chart-container .glass-btn,
+    #load-folder-btn,
+    .excel-message {
+        transition: none !important;
+    }
+}
+
+/* Forçar otimização de GPU */
+.excel-dashboard-container * {
+    contain: layout style paint !important;
+    will-change: auto !important;
+}
+
+/* ===== FIM DO PATCH DE PERFORMANCE PARA ABA EXCEL ===== */ 

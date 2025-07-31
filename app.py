@@ -28,12 +28,14 @@ from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.api import api_bp
 from routes.diagnostics import diagnostics_bp
+from routes.excel_dashboard_simple import excel_dashboard_simple_bp
 
 # Registrar blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(diagnostics_bp)
+app.register_blueprint(excel_dashboard_simple_bp)
 
 # Adicionar função auxiliar ao contexto do template
 app.jinja_env.globals.update(safe_json_dumps=safe_json_dumps)

@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard CEO - Sistema de Pontuação</title>
-    <!-- Critical CSS (above-the-fold) + FontAwesome básico + Overview Cards -->
+    
+    <!-- CRITICAL CSS INLINE - Above the fold -->
     <style>
         :root{--primary-dark:#1e293b;--accent-blue:#3b82f6;--text-primary:#f8fafc;--text-secondary:#e2e8f0;--glass-bg-strong:rgba(15,23,42,0.95);--glass-border:rgba(148,163,184,0.2);--radius-lg:16px}
         *{margin:0;padding:0;box-sizing:border-box}
@@ -24,33 +25,16 @@
         .overview-value{color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2}
         .overview-label{color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
         body,button,input,select{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
-        .chart-loading-overlay {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(30,41,59,0.7);
-          z-index: 10;
-        }
-        .spinner {
-          width: 38px;
-          height: 38px;
-          border: 4px solid #3b82f6;
-          border-top: 4px solid #fff;
-          border-radius: 50%;
-          animation: spin 2.8s cubic-bezier(0.4,0,0.2,1) infinite !important;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        .chart-container:not(.loading) .chart-loading-overlay {
-          display: none;
-        }
-        /* ——— Glass Style para Tabela de Registros e Botões ——— */
+        
+        /* Loading states */
+        .chart-loading-overlay{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(30,41,59,0.7);z-index:10}
+        .spinner{width:38px;height:38px;border:4px solid #3b82f6;border-top:4px solid #fff;border-radius:50%;animation:spin 2.8s cubic-bezier(0.4,0,0.2,1) infinite!important}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        .chart-container:not(.loading) .chart-loading-overlay{display:none}
+        
+        /* Glass Style para Tabela de Registros e Botões */
         .glass-table{width:100%;border-collapse:collapse;background:rgba(30,41,59,0.35);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);overflow:hidden}
-        .glass-table th{padding:0.75rem 0.9rem;text-align:left;background:rgba(30,41,59,0.75);color:var(--text-primary);font-weight:600;font-size:0.9rem}
+        .glass-table th{padding:0.75rem 0.9rem;text-align:center;background:rgba(30,41,59,0.75);color:var(--text-primary);font-weight:600;font-size:0.9rem}
         .glass-table td{padding:0.65rem 0.9rem;border-bottom:1px solid rgba(148,163,184,0.15);color:var(--text-secondary);font-size:0.85rem}
         .glass-table tbody tr:hover{background:rgba(255,255,255,0.03)}
         .table-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(148,163,184,0.25);color:#f1f5f9;border-radius:8px;padding:0.35rem 0.55rem;cursor:pointer;transition:background .2s,transform .15s;display:inline-flex;align-items:center;gap:4px;font-size:0.8rem}
@@ -58,28 +42,58 @@
         .table-btn i{font-size:0.85rem}
         .glass-btn{backdrop-filter:blur(10px);border:1px solid var(--glass-border);background:rgba(30,41,59,0.6);color:var(--text-primary);padding:0.6rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.9rem;display:inline-flex;align-items:center;gap:6px;transition:background .25s,transform .15s}
         .glass-btn:hover{background:rgba(30,41,59,0.8);transform:translateY(-2px)}
-        /* ===== Expansão do gráfico ===== */
+        
+        /* Preload critical fonts */
+        @font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');}
+        @font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');}
+        @font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');}
+
+        /* Chart expansion - SOLUÇÃO MODAL OVERLAY */
         .chart-card{position:relative;transition:transform .35s ease;}
         .expand-btn{background:rgba(30,41,59,0.0);border:none;color:#94a3b8;cursor:pointer;font-size:1rem;margin-right:.5rem;display:flex;align-items:center;transition:color .25s;}
         .expand-btn:hover{color:#f1f5f9;}
-        .chart-card.expanded{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(1.02);width:70vw;height:60vh;z-index:1000;box-shadow:0 25px 50px rgba(0,0,0,0.4);}
-        .chart-card.expanded:hover{transform:translate(-50%,-50%);}
-        .chart-card.expanded .chart-container{height:calc(100% - 80px);} /* header */
-        body.modal-open{overflow:hidden;}
+        
+        /* SIMPLIFICADO: Posicionamento do botão expandir */
+        .chart-actions {
+            position: absolute !important;
+            bottom: 1rem !important;
+            left: 1rem !important;
+            z-index: 10 !important;
+        }
+        
+        .expand-btn {
+            position: relative !important;
+            z-index: 11 !important;
+            pointer-events: auto !important;
+        }
     </style>
-    <!-- Mobile overrides externos -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+    
+    <!-- Preconnect para CDNs críticos -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    
+    <!-- Favicon inline para evitar 404 -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+    
     <!-- CSS não-crítico carregado de forma não bloqueante -->
     <link rel="preload" as="style" href="{{ url_for('static', filename='css/app.css') }}" onload="this.onload=null;this.rel='stylesheet';" importance="low">
     <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}"></noscript>
+    
+    <!-- CSS da aba Excel -->
+    <link rel="preload" as="style" href="{{ url_for('static', filename='css/excel_dashboard.css') }}" onload="this.onload=null;this.rel='stylesheet';" importance="low">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/excel_dashboard.css') }}"></noscript>
+    
+    <!-- Mobile overrides externos -->
+    <link rel="preload" as="style" href="{{ url_for('static', filename='css/mobile.css') }}" onload="this.onload=null;this.rel='stylesheet';" importance="low">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}"></noscript>
+    
     <!-- FontAwesome carregado de forma assíncrona após LCP -->
-    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.rel='stylesheet'">
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet';" importance="low">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
-    <!-- Favicon inline para evitar 404 -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
-    <!-- Linha adicionada: preconnect para CDNs -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/emergency-patch.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/background-fix.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/excel-performance-patch.css') }}">
 </head>
 <body>
     <!-- Revelar conteúdo principal apenas após o DOM estar pronto -->
@@ -120,6 +134,10 @@
                     <i class="fas fa-table"></i>
                     Registros
                 </button>
+                <button class="tab-button" data-tab="excel-tab">
+                    <i class="fas fa-file-excel"></i>
+                    Excel
+                </button>
             </div>
 
             <!-- Tab da Equipe -->
@@ -127,26 +145,26 @@
                 <!-- Visão geral da equipe -->
                 <!-- Corrigir TODOS os 4 cards: -->
                 <div class="overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-bottom:2rem">
-                    <div class="overview-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px">
-                        <div class="card-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-                            <span style="font-size:24px;">📈</span>
+                    <div class="overview-card gpu-accelerated layout-optimized" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px">
+                        <div class="card-icon" style="width:48px;height:48px;background:transparent!important;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative">
+                            <i class="fas fa-chart-line" style="font-size:24px!important;color:#3b82f6!important;display:block!important;line-height:1!important"></i>
                         </div>
                         <div class="overview-value" style="color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2">{{ total_points if total_points is defined else 0 }}</div>
                         <div class="overview-label" style="color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Total de Pontos desta Semana</div>
                     </div>
                     
-                    <div class="overview-card" id="monthly-total-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px;position:relative">
-                        <div class="card-icon" id="monthly-total-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-                            <span id="monthly-total-emoji" style="font-size:24px;">🎯</span>
+                    <div class="overview-card gpu-accelerated layout-optimized" id="monthly-total-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px;position:relative">
+                        <div class="card-icon" id="monthly-total-icon" style="width:48px;height:48px;background:transparent!important;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative">
+                            <i class="fas fa-bullseye" id="monthly-total-fa-icon" style="font-size:24px!important;color:#3b82f6!important;display:block!important;line-height:1!important"></i>
                         </div>
-                        <button id="toggle-points-reais" title="Alternar pontos/reais" style="position:absolute;top:18px;right:18px;background:rgba(30,41,59,0.7);border:none;border-radius:8px;padding:4px 10px;color:#fff;cursor:pointer;font-size:1rem;transition:background 0.2s;z-index:2;display:flex;align-items:center;gap:4px"><i class="fas fa-sync-alt"></i> <span id="toggle-label">💸</span></button>
+                        <button id="toggle-points-reais" title="Alternar pontos/reais" style="position:absolute;top:18px;right:18px;background:rgba(30,41,59,0.7);border:none;border-radius:8px;padding:4px 10px;color:#fff;cursor:pointer;font-size:1rem;transition:background 0.2s;z-index:2;display:flex;align-items:center;gap:4px"><i class="fas fa-sync-alt"></i> <i class="fas fa-dollar-sign" id="toggle-icon" style="color:#3b82f6"></i></button>
                         <div id="monthly-total-value" class="overview-value" style="color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2;transition:color 0.3s, opacity 0.4s cubic-bezier(.4,0,.2,1);opacity:1;will-change:opacity,color;">{{ "{:,.0f}".format(monthly_team_total) if monthly_team_total is defined else 0 }}</div>
                         <div id="monthly-total-label" class="overview-label" style="color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Pontos Mensais Totais</div>
                     </div>
                     
-                    <div class="overview-card" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px">
-                        <div class="card-icon" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-                            <span style="font-size:24px;">📊</span>
+                    <div class="overview-card gpu-accelerated layout-optimized" style="background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:2rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:10px">
+                        <div class="card-icon" style="width:48px;height:48px;background:transparent!important;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative">
+                            <i class="fas fa-chart-bar" style="font-size:24px!important;color:#3b82f6!important;display:block!important;line-height:1!important"></i>
                         </div>
                         <div class="overview-value" style="color:#f8fafc;font-size:2rem;font-weight:700;margin-bottom:4px;line-height:1.2">{{ "%.1f"|format(team_average_percentage if team_average_percentage is defined else 0) }}%</div>
                         <div class="overview-label" style="color:#e2e8f0;font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Progresso da Equipe<br>Esta Semana</div>
@@ -161,8 +179,7 @@
                             Progresso Geral da Equipe - Mensal
                         </h2>
                         <div class="progress-stats" style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
-                            {% set monthly_team_total = employee_totals.values() | map(attribute='monthly_points') | sum %}
-                            {% set monthly_team_target = (employees|length - 1) * 9500 + 10500 %}
+                            {% set monthly_team_target = 29500 %}
                             {% set monthly_team_percentage = (monthly_team_total / monthly_team_target * 100) if monthly_team_target > 0 else 0 %}
                             <span style="color:#94a3b8;font-size:0.9rem"><strong>{{ monthly_team_total }}</strong> de <strong>{{ monthly_team_target }}</strong> pontos</span>
                             <span class="{% if monthly_team_percentage >= 80 %}text-success{% elif monthly_team_percentage >= 60 %}text-warning{% else %}text-danger{% endif %}" style="font-weight:600">
@@ -233,11 +250,11 @@
                           <div class="employee-progress-fill" style="width: {{ ((totals.weekly_points | default(0)) / (totals.weekly_goal | default(1)) * 100) }}%;"></div>
                         </div>
                         {% if (totals.weekly_points | default(0)) < (totals.weekly_goal | default(1)) %}
-                        <div class="progress-info text-info">
+                        <div class="progress-info text-info" style="margin-top: 8px;">
                           <i class="fas fa-rocket"></i> Vamos lá! Ainda há {{ (100 - ((totals.weekly_points | default(0)) / (totals.weekly_goal | default(1)) * 100)) | round(1) }}% para a meta
                         </div>
                         {% else %}
-                        <div class="progress-info text-success">
+                        <div class="progress-info text-success" style="margin-top: 8px;">
                           <i class="fas fa-trophy"></i> Meta atingida! Parabéns!
                         </div>
                         {% endif %}
@@ -252,7 +269,7 @@
             <!-- Tab dos Gráficos -->
             <div class="tab-content" id="charts-tab">
                 <div class="charts-container">
-                    <div class="chart-card">
+                    <div class="chart-card gpu-accelerated layout-optimized">
                         <div class="chart-header">
                             <h3 class="chart-title">Progresso Semanal</h3>
                             <button class="toggle-meta-btn" id="toggle-weekly-meta">
@@ -268,7 +285,7 @@
                         <div class="chart-actions"><button class="expand-btn" title="Expandir" onclick="toggleExpand(this)"><i class="fas fa-expand"></i></button></div>
                     </div>
                     
-                    <div class="chart-card">
+                    <div class="chart-card gpu-accelerated layout-optimized">
                         <div class="chart-header">
                             <h3 class="chart-title">Progresso Mensal</h3>
                             <button class="toggle-meta-btn" id="toggle-monthly-meta">
@@ -284,7 +301,7 @@
                         <div class="chart-actions"><button class="expand-btn" title="Expandir" onclick="toggleExpand(this)"><i class="fas fa-expand"></i></button></div>
                     </div>
                     
-                    <div class="chart-card">
+                    <div class="chart-card gpu-accelerated layout-optimized">
                         <div class="chart-header">
                             <h3 class="chart-title">Progresso Diário</h3>
                             <button class="toggle-meta-btn" id="toggle-daily-meta">
@@ -326,6 +343,7 @@
                         <thead>
                             <tr style="background:rgba(30,41,59,0.85)">
                                 <th>Data</th>
+                                <th>Horário</th>
                                 <th>Funcionário</th>
                                 <th>Refinaria</th>
                                 <th>Pontos</th>
@@ -341,6 +359,96 @@
                     <button id="btn-export-excel" class="glass-btn" style="background:#3b82f6"><i class="fas fa-file-excel"></i> Exportar Excel</button>
                 </div>
             </div>
+
+            <!-- Tab Excel -->
+            <div class="tab-content" id="excel-tab">
+                <div class="excel-dashboard-container">
+                    <div class="excel-header">
+                        <h2>
+                            <i class="fas fa-file-excel"></i>
+                            Processamento de Arquivos Excel
+                        </h2>
+                        <p>
+                            Carregue arquivos Excel da pasta "registros monitorar" para análise e visualização
+                        </p>
+                    </div>
+
+                    <!-- Botão de Carregar Pasta -->
+                    <div class="excel-controls">
+                        <button id="load-folder-btn" class="glass-btn">
+                            <i class="fas fa-folder-open"></i>
+                            Carregar Pasta "registros monitorar"
+                        </button>
+                        <div id="loading-indicator">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Processando arquivos...
+                        </div>
+                    </div>
+
+                    <!-- Cards de Estatísticas -->
+                    <div class="excel-stats-grid" id="excel-stats-grid" style="display: none;">
+                        <!-- Arquivos Processados -->
+                        <div class="excel-stat-card" data-stat-type="files">
+                            <div class="stat-icon">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-files">0</div>
+                                <div class="stat-label">ARQUIVOS PROCESSADOS</div>
+                                <div class="stat-detail" id="files-detail">Processados com sucesso</div>
+                            </div>
+                        </div>
+
+                        <!-- Registros Totais -->
+                        <div class="excel-stat-card" data-stat-type="records">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-records">0</div>
+                                <div class="stat-label">REGISTROS TOTAIS</div>
+                                <div class="stat-detail" id="records-detail">Média por funcionário</div>
+                            </div>
+                        </div>
+
+                        <!-- Pontos Totais -->
+                        <div class="excel-stat-card" data-stat-type="points">
+                            <div class="stat-icon">
+                                <i class="fas fa-bullseye"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-points">0</div>
+                                <div class="stat-label">PONTOS TOTAIS</div>
+                                <div class="stat-detail" id="points-detail">Média por funcionário</div>
+                            </div>
+                        </div>
+
+                        <!-- Lucro Totais -->
+                        <div class="excel-stat-card" data-stat-type="profit">
+                            <div class="stat-icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="total-profit">R$ 0</div>
+                                <div class="stat-label">LUCRO TOTAL EM MÉDIA</div>
+                                <div class="stat-detail" id="profit-detail">Pontos x R$ 3,25</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico Principal -->
+                    <div class="excel-chart-container" id="excel-chart-container" style="display: none;">
+                        <div class="chart-header">
+                            <h3>Performance por Funcionário - Gráfico de Barras</h3>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-container">
+                                <canvas id="excel-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -350,6 +458,26 @@
     <div id="daily-data" style="display:none"></div>
     </main>
     {% endif %}
+
+    <!-- MODAL OVERLAY PARA EXPANSÃO -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div id="expanded-chart" class="chart-card">
+            <div class="chart-header">
+                <h3 id="expanded-chart-title" class="chart-title"></h3>
+                <button id="expanded-chart-meta" class="toggle-meta-btn">
+                    <i class="fas fa-eye"></i> Meta
+                </button>
+            </div>
+            <div class="chart-container">
+                <canvas id="expanded-chart-canvas"></canvas>
+            </div>
+            <div class="chart-actions">
+                <button class="expand-btn" title="Comprimir" onclick="closeExpanded()">
+                    <i class="fas fa-compress"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts não-bloqueantes no final -->
     <script defer>
@@ -468,9 +596,8 @@
       const btn = document.getElementById('toggle-points-reais');
       const valueEl = document.getElementById('monthly-total-value');
       const labelEl = document.getElementById('monthly-total-label');
-      const toggleLabel = document.getElementById('toggle-label');
-      const emojiEl = document.getElementById('monthly-total-emoji');
-      if (!btn || !valueEl || !labelEl || !toggleLabel || !emojiEl) return;
+      const emojiEl = document.getElementById('monthly-total-fa-icon');
+      if (!btn || !valueEl || !labelEl || !emojiEl) return;
       let showingReais = false;
       const pontos = parseInt((valueEl.textContent || '').replace(/[^0-9]/g, ''));
       
@@ -530,20 +657,34 @@
       btn.addEventListener('click', function() {
         if (!showingReais) {
           // Pontos → Reais (1 ponto = R$ 3,25)
-          emojiEl.textContent = '💸';
+          emojiEl.className = 'fas fa-dollar-sign';
+          emojiEl.style.color = '#22c55e'; // verde para reais
           const reais = pontos * 3.25; // CORREÇÃO: 1 ponto = R$ 3,25
           animateNumberOptimized(0, reais, v => {
             valueEl.innerHTML = 'R$ ' + v;
           });
           valueEl.style.color = '#22c55e'; // verde
           labelEl.textContent = 'VALOR MENSAL EM REAIS';
-          toggleLabel.textContent = '🎯';
+          
+          // Atualizar ícone do botão
+          const toggleIcon = document.getElementById('toggle-icon');
+          if (toggleIcon) {
+            toggleIcon.className = 'fas fa-bullseye';
+            toggleIcon.style.color = '#3b82f6'; // azul para pontos
+          }
         } else {
           // Reais → Pontos
-          emojiEl.textContent = '🎯';
+          emojiEl.className = 'fas fa-bullseye';
+          emojiEl.style.color = '#3b82f6'; // azul para pontos
           modernFadeValue('', '#f8fafc');
           labelEl.textContent = 'PONTOS MENSAIS TOTAIS';
-          toggleLabel.textContent = '💸';
+          
+          // Atualizar ícone do botão
+          const toggleIcon = document.getElementById('toggle-icon');
+          if (toggleIcon) {
+            toggleIcon.className = 'fas fa-dollar-sign';
+            toggleIcon.style.color = '#3b82f6'; // azul para reais também
+          }
         }
         showingReais = !showingReais;
       });
@@ -558,11 +699,11 @@
         const exportBtn=document.getElementById('btn-export-excel');
         if(!weekSelect||!empSelect||!tbody) return;
         async function loadRecords(){
-            tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem">Carregando...</td></tr>';
+            tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem">Carregando...</td></tr>';
             const week=weekSelect.value;
             const emp=empSelect.value;
             const res=await fetch(`/api/entries?week=${week}`+(emp?`&employee_id=${emp}`:''));
-            if(!res.ok){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#f87171;padding:1rem">Erro ao carregar</td></tr>';return;}
+            if(!res.ok){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#f87171;padding:1rem">Erro ao carregar</td></tr>';return;}
             const data=await res.json();
             tbody.innerHTML='';
             if(data.entries&&data.entries.length){
@@ -570,12 +711,13 @@
                     const tr=document.createElement('tr');
                     const [datePart,timePart]=e.date.split(' ');
                     const [yyyy,mm,dd]=datePart.split('-');
-                    const brDate=`${dd}/${mm}/${yyyy}` + (timePart ? ` ${timePart}` : '');
-                    tr.innerHTML=`<td>${brDate}</td><td>${e.employee}</td><td>${e.refinery}</td><td>${e.points}</td><td>${e.observations||''}</td><td><button data-id="${e.id}" class="table-btn edit-btn" title="Editar"><i class="fas fa-pen"></i></button> <button data-id="${e.id}" class="table-btn delete-btn" title="Excluir"><i class="fas fa-trash"></i></button></td>`;
+                    const brDate=`${dd}/${mm}/${yyyy}`;
+                    const brTime=timePart ? timePart.substring(0,5) : '-';
+                    tr.innerHTML=`<td>${brDate}</td><td>${brTime}</td><td>${e.employee_name}</td><td>${e.refinery}</td><td>${e.points}</td><td>${e.observations||''}</td><td><button data-id="${e.id}" class="table-btn edit-btn" title="Editar"><i class="fas fa-pen"></i></button> <button data-id="${e.id}" class="table-btn delete-btn" title="Excluir"><i class="fas fa-trash"></i></button></td>`;
                     tbody.appendChild(tr);
                 });
             }else{
-                tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem">Nenhum registro</td></tr>';
+                tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem">Nenhum registro</td></tr>';
             }
         }
         weekSelect.addEventListener('change',loadRecords);
@@ -604,25 +746,224 @@
             }
         });
         exportBtn?.addEventListener('click',()=>{
-            window.location.href='/api/export';
+            window.location.href='/export';
         });
         // Carregar inicial
         loadRecords();
     })();
 
-    // ====== Toggle Expand Gráficos ======
+    // ====== Toggle Expand Gráficos - SOLUÇÃO MODAL OVERLAY ======
     function toggleExpand(btn){
         const card = btn.closest('.chart-card');
-        const expanded = card.classList.toggle('expanded');
-        // Trocar ícone
-        const icon = btn.querySelector('i');
-        if(icon){
-            icon.classList.toggle('fa-expand', !expanded);
-            icon.classList.toggle('fa-compress', expanded);
+        const chartId = card.querySelector('canvas').id;
+        const chartTitle = card.querySelector('.chart-title').textContent;
+        const metaBtn = card.querySelector('.toggle-meta-btn');
+        
+        // Mapear IDs dos canvas para chaves dos charts
+        const chartKeyMap = {
+            'weeklyChart': 'weekly',
+            'monthlyChart': 'monthly',
+            'dailyChart': 'daily'
+        };
+        
+        const chartKey = chartKeyMap[chartId];
+        
+        // Copiar dados para o modal
+        const expandedTitle = document.getElementById('expanded-chart-title');
+        const expandedMeta = document.getElementById('expanded-chart-meta');
+        const expandedCanvas = document.getElementById('expanded-chart-canvas');
+        const expandedChart = document.getElementById('expanded-chart');
+        const modalOverlay = document.getElementById('modal-overlay');
+        
+        // RESET COMPLETO DO MODAL
+        if (expandedChart) {
+            // Remover todas as classes que podem causar conflito
+            expandedChart.className = 'chart-card';
+            // Forçar reset do estilo inline
+            expandedChart.style.cssText = '';
         }
-        // Bloquear/desbloquear scroll de fundo
-        document.body.classList.toggle('modal-open', expanded);
+        
+        if (modalOverlay) {
+            // Remover classes conflitantes
+            modalOverlay.classList.remove('active');
+            modalOverlay.style.display = 'none';
+        }
+        
+        // Configurar modal
+        expandedTitle.textContent = chartTitle;
+        if (metaBtn) {
+            expandedMeta.innerHTML = metaBtn.innerHTML;
+            // SINCRONIZAR ESTADO INICIAL DO BOTÃO META
+            expandedMeta.classList.toggle('meta-hidden', metaBtn.classList.contains('meta-hidden'));
+            
+            // COPIAR FUNCIONALIDADE DO BOTÃO META
+            expandedMeta.onclick = function() {
+                // Usar a função toggleGoalLine do dashboardInstance
+                if (window.dashboardInstance && window.dashboardInstance.toggleGoalLine) {
+                    // Determinar o tipo do gráfico baseado no chartKey
+                    const chartType = chartKey; // 'weekly', 'monthly', 'daily'
+                    
+                    // Toggle no gráfico original primeiro
+                    window.dashboardInstance.toggleGoalLine(chartType);
+                    
+                    // Atualizar o gráfico expandido também
+                    if (window.expandedChartInstance) {
+                        // Recriar o gráfico expandido com as novas configurações
+                        window.expandedChartInstance.destroy();
+                        
+                        const originalChart = window.dashboardInstance.charts[chartType];
+                        window.expandedChartInstance = new Chart(expandedCanvas, {
+                            type: originalChart.config.type,
+                            data: originalChart.data,
+                            options: {
+                                ...originalChart.options,
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    ...originalChart.options.plugins,
+                                    legend: {
+                                        ...originalChart.options.plugins.legend,
+                                        display: true
+                                    }
+                                }
+                            }
+                        });
+                        
+                        window.expandedChartInstance.update();
+                    }
+                    
+                    // Atualizar o botão no modal para refletir o estado atual
+                    setTimeout(() => {
+                        const originalButton = document.getElementById(`toggle-${chartType}-meta`);
+                        if (originalButton) {
+                            expandedMeta.innerHTML = originalButton.innerHTML;
+                            // Sincronizar também a classe CSS
+                            expandedMeta.classList.toggle('meta-hidden', originalButton.classList.contains('meta-hidden'));
+                        }
+                    }, 150); // Aumentado para 150ms para garantir sincronização
+                } else {
+                    console.error('Dashboard instance ou toggleGoalLine não encontrado');
+                }
+            };
+        }
+        
+        // Mostrar modal primeiro
+        modalOverlay.classList.add('active');
+        document.body.classList.add('modal-open');
+        
+        // Aguardar um pouco para o modal aparecer
+        setTimeout(() => {
+            // Recriar gráfico no modal
+            if (window.dashboardInstance && window.dashboardInstance.charts[chartKey]) {
+                const originalChart = window.dashboardInstance.charts[chartKey];
+                
+                // Destruir gráfico anterior se existir
+                if (window.expandedChartInstance) {
+                    window.expandedChartInstance.destroy();
+                }
+                
+                // Limpar canvas completamente
+                const ctx = expandedCanvas.getContext('2d');
+                ctx.clearRect(0, 0, expandedCanvas.width, expandedCanvas.height);
+                
+                // Definir tamanho do canvas baseado no container
+                const container = expandedCanvas.closest('.chart-container');
+                if (container) {
+                    // CENTRALIZAÇÃO PERFEITA DO CANVAS
+                    expandedCanvas.width = container.offsetWidth;
+                    expandedCanvas.height = container.offsetHeight;
+                    
+                    // Garantir que o canvas esteja centralizado
+                    expandedCanvas.style.display = 'block';
+                    expandedCanvas.style.margin = 'auto';
+                }
+                
+                // Criar novo gráfico com dados do original
+                window.expandedChartInstance = new Chart(expandedCanvas, {
+                    type: originalChart.config.type,
+                    data: originalChart.data,
+                    options: {
+                        ...originalChart.options,
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            ...originalChart.options.plugins,
+                            legend: {
+                                ...originalChart.options.plugins.legend,
+                                display: true
+                            }
+                        }
+                    }
+                });
+                
+                // Forçar redraw
+                window.expandedChartInstance.update();
+                
+                // SINCRONIZAR COM GRÁFICO ORIGINAL
+                // Quando o gráfico original for atualizado, atualizar o expandido também
+                const originalChartInstance = window.dashboardInstance.charts[chartKey];
+                if (originalChartInstance) {
+                    // Observar mudanças no gráfico original
+                    const originalUpdate = originalChartInstance.update;
+                    originalChartInstance.update = function() {
+                        originalUpdate.call(this);
+                        // Atualizar gráfico expandido se existir
+                        if (window.expandedChartInstance) {
+                            window.expandedChartInstance.update();
+                        }
+                    };
+                }
+                
+                console.log('Gráfico expandido criado:', window.expandedChartInstance);
+                console.log('Tipo do gráfico:', originalChart.config.type);
+                console.log('Dados do gráfico:', originalChart.data);
+                console.log('Chart Key usado:', chartKey);
+            } else {
+                console.error('Dashboard instance ou chart não encontrado:', chartKey);
+                console.log('Charts disponíveis:', window.dashboardInstance ? Object.keys(window.dashboardInstance.charts) : 'Nenhum');
+                console.log('Chart ID original:', chartId);
+                console.log('Chart Key mapeado:', chartKey);
+            }
+        }, 300); // Aumentado para 300ms
     }
+    
+    function closeExpanded() {
+        const modalOverlay = document.getElementById('modal-overlay');
+        const expandedChart = document.getElementById('expanded-chart');
+        
+        // Remover classes
+        modalOverlay.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        
+        // Destruir gráfico expandido
+        if (window.expandedChartInstance) {
+            window.expandedChartInstance.destroy();
+            window.expandedChartInstance = null;
+        }
+        
+        // RESET COMPLETO DO MODAL
+        if (expandedChart) {
+            // Remover todas as classes que podem causar conflito
+            expandedChart.className = 'chart-card';
+            // Forçar reset do estilo inline
+            expandedChart.style.cssText = '';
+        }
+        
+        // Forçar reset do modal overlay
+        modalOverlay.style.display = 'none';
+    }
+    
+    // Fechar modal ao clicar fora
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    closeExpanded();
+                }
+            });
+        }
+    });
     </script>
 
     <!-- LCP Debug - defer para não bloquear -->
@@ -644,8 +985,18 @@
 
     <!-- Script de teste para depuração -->
     <!-- Importar Chart.js e plugin antes do ceo_dashboard.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    
+    <!-- Scripts de otimização de performance -->
+    <script src="{{ url_for('static', filename='js/fps-optimizer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tab-diagnostic.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/quick-test.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/excel-performance-test.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/excel-debug.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/excel-force-fix.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart-optimized.js') }}"></script>
+    
     <script src="{{ url_for('static', filename='ceo_dashboard.js') }}"></script>
+    <!-- Script da aba Excel -->
+    <script src="{{ url_for('static', filename='js/excel_dashboard.js') }}"></script>
 </body>
 </html>
