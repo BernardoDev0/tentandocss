@@ -135,7 +135,21 @@ def employee_dashboard_enhanced():
                     break
 
         # ✅ CORREÇÃO: Verificar se monthly_labels é uma lista antes de usar len()
-        goals_array = [employee.weekly_goal] * (len(monthly_labels) if monthly_labels else 0)
+        # DEBUG: Log adicional para debug
+        current_app.logger.info(f"DEBUG: monthly_labels type = {type(monthly_labels)}")
+        current_app.logger.info(f"DEBUG: monthly_labels value = {monthly_labels}")
+        current_app.logger.info(f"DEBUG: monthly_labels is None = {monthly_labels is None}")
+        current_app.logger.info(f"DEBUG: monthly_labels is list = {isinstance(monthly_labels, list)}")
+        
+        # ✅ VERIFICAÇÃO ROBUSTA: Garantir que len() está disponível
+        try:
+            if monthly_labels and isinstance(monthly_labels, list):
+                goals_array = [employee.weekly_goal] * len(monthly_labels)
+            else:
+                goals_array = []
+        except Exception as e:
+            current_app.logger.error(f"Erro ao usar len(): {str(e)}")
+            goals_array = []
 
         monthly_data = {
             'labels': monthly_labels,
