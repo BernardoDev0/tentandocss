@@ -224,11 +224,15 @@ def ceo_dashboard_enhanced():
         # Média de porcentagem da equipe
         if employee_totals:
             # Excluir Rodrigo do cálculo da média da equipe
-            team_average_percentage = sum(
-                (v['weekly_points'] / v['weekly_goal']) * 100 if v['weekly_goal'] else 0
-                for name, v in employee_totals.items()
-                if name != 'Rodrigo'
-            ) / len([name for name in employee_totals.keys() if name != 'Rodrigo'])
+            filtered_employees = [name for name in employee_totals.keys() if name != 'Rodrigo']
+            if filtered_employees:
+                team_average_percentage = sum(
+                    (v['weekly_points'] / v['weekly_goal']) * 100 if v['weekly_goal'] else 0
+                    for name, v in employee_totals.items()
+                    if name != 'Rodrigo'
+                ) / len(filtered_employees)
+            else:
+                team_average_percentage = 0
         else:
             team_average_percentage = 0
 
