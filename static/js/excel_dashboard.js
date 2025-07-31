@@ -39,6 +39,18 @@ window.ExcelDashboard = {
             loadBtn.addEventListener('click', () => this.loadFolder());
         }
 
+        // ✅ ADICIONAR: Listener para redimensionamento da janela
+        window.addEventListener('resize', () => {
+            if (this.state.chartInstance) {
+                console.log('📱 Redimensionamento detectado, atualizando gráfico...');
+                // Aguardar um pouco para o redimensionamento terminar
+                setTimeout(() => {
+                    this.state.chartInstance.resize();
+                    this.state.chartInstance.update();
+                }, 100);
+            }
+        });
+
         // ✅ REMOVIDO: Event listeners para cards de estatísticas - não faz sentido clicar
         // this.bindStatCardEvents();
     },
@@ -384,6 +396,10 @@ window.ExcelDashboard = {
         const chartData = this.prepareChartData();
         console.log('📊 Dados para o gráfico:', chartData);
 
+        // ✅ DETECTAR SE É MOBILE
+        const isMobile = window.innerWidth <= 600;
+        console.log('📱 É mobile?', isMobile);
+
         // Configuração para gráfico de barras
         try {
             this.state.chartInstance = new Chart(canvas, {
@@ -396,15 +412,15 @@ window.ExcelDashboard = {
                 plugins: {
                     legend: {
                             display: true,
-                        position: 'top',
+                        position: isMobile ? 'bottom' : 'top', // ✅ POSIÇÃO ADAPTATIVA
                         labels: {
                             color: '#ffffff',
                             font: {
-                                size: 12,
+                                size: isMobile ? 10 : 12, // ✅ TAMANHO ADAPTATIVO
                                     weight: '600'
                             },
                             usePointStyle: true,
-                                padding: 20
+                                padding: isMobile ? 10 : 20 // ✅ PADDING ADAPTATIVO
                         },
                         onClick: (event, legendItem, legend) => {
                                 console.log('🔍 Legend clicada:', legendItem);
@@ -492,7 +508,7 @@ window.ExcelDashboard = {
                     x: {
                             display: true,
                         title: {
-                            display: true,
+                            display: !isMobile, // ✅ ESCONDER TÍTULO NO MOBILE
                             text: 'Meses',
                             color: '#ffffff',
                             font: {
@@ -503,8 +519,10 @@ window.ExcelDashboard = {
                         ticks: {
                                 color: '#94a3b8',
                             font: {
-                                    size: 12
-                            }
+                                    size: isMobile ? 10 : 12 // ✅ TAMANHO ADAPTATIVO
+                            },
+                            maxRotation: isMobile ? 45 : 0, // ✅ ROTAÇÃO NO MOBILE
+                            minRotation: isMobile ? 45 : 0
                         },
                         grid: {
                                 color: 'rgba(148, 163, 184, 0.1)'
@@ -513,7 +531,7 @@ window.ExcelDashboard = {
                         y: {
                             display: true,
                         title: {
-                            display: true,
+                            display: !isMobile, // ✅ ESCONDER TÍTULO NO MOBILE
                             text: 'Pontos',
                             color: '#ffffff',
                             font: {
@@ -524,7 +542,7 @@ window.ExcelDashboard = {
                             ticks: {
                                 color: '#94a3b8',
                                 font: {
-                                    size: 12
+                                    size: isMobile ? 10 : 12 // ✅ TAMANHO ADAPTATIVO
                                 }
                             },
                             grid: {
@@ -538,8 +556,8 @@ window.ExcelDashboard = {
                 },
                     elements: {
                         bar: {
-                            borderWidth: 2,
-                            borderRadius: 4
+                            borderWidth: isMobile ? 1 : 2, // ✅ BORDA ADAPTATIVA
+                            borderRadius: isMobile ? 2 : 4 // ✅ BORDER RADIUS ADAPTATIVO
                     }
                 }
             }
