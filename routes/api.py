@@ -547,6 +547,7 @@ def api_entries():
         # ✅ ADICIONAR FILTRO DE SEMANA
         if week and week != '':
             current_app.logger.info(f"🔍 DEBUG MASSIVO: Aplicando filtro de semana: {week}")
+            # CORREÇÃO: Usar filtro por data como na versão que funciona
             from utils.calculations import get_week_dates
             start_date, end_date = get_week_dates(week)
             current_app.logger.info(f"🔍 DEBUG MASSIVO: Semana {week} - De {start_date} até {end_date}")

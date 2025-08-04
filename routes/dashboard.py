@@ -57,6 +57,7 @@ def employee_dashboard_enhanced():
         monthly_points = monthly_progress.get(employee_name, 0)
         
         # Buscar entradas da semana selecionada
+        # CORREÇÃO: Usar filtro por data como na versão que funciona
         start_date, end_date = get_week_dates(selected_week_str)
         entries = Entry.query.filter(
             Entry.employee_id == employee_id,
@@ -64,7 +65,7 @@ def employee_dashboard_enhanced():
             Entry.date <= end_date
         ).order_by(Entry.date.desc()).all()
         
-        # Buscar todas as entradas para histórico
+        # Buscar todas as entradas para histórico (manter como está)
         all_entries = Entry.query.filter(
             Entry.employee_id == employee_id
         ).order_by(Entry.date.desc()).limit(50).all()
@@ -200,7 +201,7 @@ def ceo_dashboard_enhanced():
         # Listagem de funcionários ativos
         employees = Employee.query.all()
 
-        # Progresso semanal agregado da equipe
+        # Progresso semanal agregado da equipe - EXATAMENTE como na versão que funciona
         weekly_progress = calculate_weekly_progress(None, selected_week)
         total_points = sum(weekly_progress.values()) if weekly_progress else 0
 
@@ -208,7 +209,7 @@ def ceo_dashboard_enhanced():
         now = datetime.now(timezone)
         monthly_progress = calculate_monthly_progress(None, now.month, now.year)
 
-        # Construir estrutura consolidada por funcionário
+        # Construir estrutura consolidada por funcionário - EXATAMENTE como na versão que funciona
         employee_totals = {}
         for emp in employees:
             name = emp.real_name
@@ -232,21 +233,16 @@ def ceo_dashboard_enhanced():
                 'monthly_goal': monthly_goal,
                 'status': status
             }
-        # Calcular total mensal da equipe (incluindo todos)
+        
+        # Calcular total mensal da equipe
         monthly_team_total = sum(monthly_progress.values()) if monthly_progress else 0
 
         # Média de porcentagem da equipe
         if employee_totals:
-            # Excluir Rodrigo do cálculo da média da equipe
-            filtered_employees = [name for name in employee_totals.keys() if name != 'Rodrigo']
-            if filtered_employees:
-                team_average_percentage = sum(
-                    (v['weekly_points'] / v['weekly_goal']) * 100 if v['weekly_goal'] else 0
-                    for name, v in employee_totals.items()
-                    if name != 'Rodrigo'
-                ) / len(filtered_employees)
-            else:
-                team_average_percentage = 0
+            team_average_percentage = sum(
+                (v['weekly_points'] / v['weekly_goal']) * 100 if v['weekly_goal'] else 0
+                for v in employee_totals.values()
+            ) / len(employee_totals)
         else:
             team_average_percentage = 0
 

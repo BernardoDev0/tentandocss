@@ -273,7 +273,14 @@ window.ExcelDashboard = {
             
             // Easing suave
             const easeOut = 1 - Math.pow(2, -10 * progress);
-            const current = Math.round(start + (end - start) * easeOut);
+            let current = start + (end - start) * easeOut;
+            
+            // ✅ CORREÇÃO: Garantir que o valor final seja exato
+            if (progress >= 1) {
+                current = end; // Valor final exato
+            } else {
+                current = Math.round(current); // Arredondar apenas durante animação
+            }
             
             // Garantir que o elemento existe e é válido
             if (element && typeof element.textContent !== 'undefined') {

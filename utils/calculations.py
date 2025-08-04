@@ -1,20 +1,17 @@
 from models import db, Employee, Entry
-from utils.helpers import timezone, get_week_dates, get_current_week
+from utils.helpers import timezone
 from sqlalchemy import func
 from flask import current_app
 from datetime import datetime, timedelta  # Adicionar esta importação
 
 def get_week_dates(week_str):
-    """Converte string de semana para datas de início e fim"""
+    """Retorna o intervalo de datas da semana do ciclo (26 ao 25)"""
     try:
-        # Se for um número (1-5), usar o sistema de ciclos
         if week_str.isdigit():
             week_num = int(week_str)
-            
-            # Obter data atual
             today = datetime.now()
             
-            # Calcular início do ciclo (dia 26 do mês atual ou anterior)
+            # Descobrir início do ciclo
             if today.day >= 26:
                 cycle_start = today.replace(day=26)
             else:
@@ -23,30 +20,33 @@ def get_week_dates(week_str):
                 else:
                     cycle_start = today.replace(month=today.month-1, day=26)
             
-            # CORREÇÃO: Calcular semanas corretamente
-            # Semana 1: ciclo_start até ciclo_start + 6 dias
-            # Semana 2: ciclo_start - 7 dias até ciclo_start - 1 dia
-            # Semana 3: ciclo_start - 14 dias até ciclo_start - 8 dias
-            # etc.
-            
+            # Para semanas 1 a 4: 7 dias cada (com ajuste especial para semana 1)
             if week_num == 1:
                 week_start = cycle_start
-                week_end = cycle_start + timedelta(days=6)
-            else:
-                # Para semanas anteriores, voltar no tempo
-                days_back = (week_num - 1) * 7
-                week_start = cycle_start - timedelta(days=days_back)
+                week_end = cycle_start + timedelta(days=7)  # 8 dias total (26 a 02)
+            elif 2 <= week_num <= 4:
+                week_start = cycle_start + timedelta(days=(week_num-1)*7 + 1)  # +1 para ajustar
                 week_end = week_start + timedelta(days=6)
+            elif week_num == 5:
+                week_start = cycle_start + timedelta(days=28)
+                # Fim: dia 25 do mês seguinte ao ciclo_start
+                if cycle_start.month == 12:
+                    week_end = cycle_start.replace(year=cycle_start.year+1, month=1, day=25)
+                else:
+                    week_end = cycle_start.replace(month=cycle_start.month+1, day=25)
+            else:
+                week_start = cycle_start
+                week_end = cycle_start + timedelta(days=6)
             
-            return week_start.strftime('%Y-%m-%d'), week_end.strftime('%Y-%m-%d')
-        
+            result = week_start.strftime('%Y-%m-%d'), week_end.strftime('%Y-%m-%d')
+            return result
         # Sistema antigo para compatibilidade
         year, week = map(int, week_str.split('-W'))
         start_of_week = datetime.strptime(f'{year}-W{week:02d}-1', '%Y-W%W-%w')
         end_of_week = start_of_week + timedelta(days=6)
         return start_of_week.strftime('%Y-%m-%d'), end_of_week.strftime('%Y-%m-%d')
-    except:
-        # Fallback para semana atual
+    except Exception as e:
+        current_app.logger.error(f"Erro em get_week_dates: {str(e)}")
         today = datetime.now()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
@@ -91,8 +91,8 @@ def get_week_from_date(date_str):
 
         return min(week_number, 5)  # Limita a 5 semanas
     except Exception as e:
-        current_app.logger.error(f"Erro ao calcular semana: {str(e)}")  # Corrigir: era app.logger
-        return 1  # Retorna semana 1 em caso de erro
+        current_app.logger.error(f"Erro ao calcular semana: {str(e)}")
+        return 1
 
 def get_available_weeks():
     """Retorna lista de semanas disponíveis baseada nos registros"""
@@ -126,53 +126,21 @@ def calculate_weekly_progress(employee_id=None, week_num=None):
         # Se for um funcionário específico, limitar
         if employee_id:
             query = query.filter(Entry.employee_id == employee_id)
-            current_app.logger.info(f"Filtrando por funcionário ID: {employee_id}")
 
         entries = query.all()
         current_app.logger.info(f"Entradas encontradas: {len(entries)}")
 
-        # Se for um funcionário específico, retornar dados estruturados
-        if employee_id:
-            # Calcular pontos totais
-            total_points = sum(entry.points for entry in entries)
-            
-            # Buscar funcionário para obter meta semanal
-            employee = Employee.query.get(employee_id)
-            weekly_goal = employee.weekly_goal if employee else 0
+        # Agrupar pontos por funcionário
+        employee_totals = {}
+        for entry in entries:
+            emp_name = entry.employee.real_name
+            employee_totals[emp_name] = employee_totals.get(emp_name, 0) + entry.points
 
-            # Calcular porcentagem de progresso
-            progress_percentage = (total_points / weekly_goal * 100) if weekly_goal > 0 else 0
-            remaining_points = max(0, weekly_goal - total_points)
-
-            return {
-                'current_points': total_points,
-                'weekly_goal': weekly_goal,
-                'progress_percentage': progress_percentage,
-                'remaining_points': remaining_points
-            }
-        else:
-            # Para todos os funcionários, retornar dicionário por nome
-            employee_totals = {}
-            for entry in entries:
-                emp_name = entry.employee.real_name
-                if emp_name not in employee_totals:
-                    employee_totals[emp_name] = 0
-                employee_totals[emp_name] += entry.points
-            
-            current_app.logger.info(f"Totais semanais por funcionário: {employee_totals}")
-            return employee_totals
-
+        current_app.logger.info(f"Totais semanais calculados: {employee_totals}")
+        return employee_totals
     except Exception as e:
         current_app.logger.error(f"Erro ao calcular progresso semanal: {str(e)}")
-        if employee_id:
-            return {
-                'current_points': 0,
-                'weekly_goal': 0,
-                'progress_percentage': 0,
-                'remaining_points': 0
-            }
-        else:
-            return {}
+        return {}
 
 def calculate_monthly_progress(employee_id=None, month=None, year=None):
     """Calcula o progresso mensal usando ciclos de 26 a 25"""
