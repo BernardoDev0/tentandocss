@@ -43,7 +43,7 @@ def employee_dashboard_enhanced():
         employee_name = session['real_name']
         
         # Calcular progresso semanal
-        weekly_progress = calculate_weekly_progress(employee_id, selected_week)
+        weekly_progress = calculate_weekly_progress(selected_week, employee_id)
         # A função retorna um dicionário com dados estruturados quando employee_id é fornecido
         if isinstance(weekly_progress, dict) and 'current_points' in weekly_progress:
             weekly_points = weekly_progress['current_points']
@@ -62,8 +62,8 @@ def employee_dashboard_enhanced():
             start_date, end_date = get_week_dates(selected_week_str)
             entries = Entry.query.filter(
                 Entry.employee_id == employee_id,
-                Entry.date >= start_date,
-                Entry.date <= end_date
+                func.date(Entry.date) >= start_date,
+                func.date(Entry.date) <= end_date
             ).order_by(Entry.date.desc()).all()
         else:  # Se "Todas" foi selecionado (valor vazio)
             entries = Entry.query.filter(
@@ -175,8 +175,8 @@ def ceo_dashboard_enhanced():
         # Listagem de funcionários ativos
         employees = Employee.query.all()
 
-        # Progresso semanal agregado da equipe - EXATAMENTE como na versão que funciona
-        weekly_progress = calculate_weekly_progress(None, selected_week)
+        # Progresso semanal agregado da equipe (correto: primeiro a semana)
+        weekly_progress = calculate_weekly_progress(selected_week)
         total_points = sum(weekly_progress.values()) if weekly_progress else 0
 
         # Progresso mensal por funcionário (retorna dict {nome: pontos})

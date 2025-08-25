@@ -553,7 +553,10 @@ def api_entries():
             current_app.logger.info(f"🔍 DEBUG: Semana {week} - De {start_date} até {end_date}")
             
             # Filtrar por data da semana
-            query = query.filter(Entry.date >= start_date, Entry.date <= end_date)
+            query = query.filter(
+                func.date(Entry.date) >= start_date, 
+                func.date(Entry.date) <= end_date
+            )
             current_app.logger.info(f"🔍 DEBUG: Filtro de data aplicado: {start_date} <= date <= {end_date}")
 
         # Paginação

@@ -103,30 +103,20 @@ def get_available_weeks():
         current_app.logger.error(f"Erro ao obter semanas disponíveis: {str(e)}")  # Corrigir: era app.logger
         return ['1', '2', '3', '4', '5']
 
-# Substituir todas as ocorrências de app.logger por current_app.logger
-# Por exemplo:
-def calculate_weekly_progress(employee_id=None, week_num=None):
+def calculate_weekly_progress(week, employee_id=None):
     try:
-        # Se não for informado, usar semana atual
-        if not week_num:
-            week_num = get_current_week()
-
-        # Sempre trabalhar com a versão em string para reutilizar a função get_week_dates
-        week_str = str(week_num)
-
-        # Obter intervalo (26-do-mês a 25-do-mês) correspondente à semana desejada
-        start_date, end_date = get_week_dates(week_str)
-        current_app.logger.info(
-            f"Calculando progresso semanal (semana {week_str}) – período {start_date} a {end_date}"
+        start_date, end_date = get_week_dates(str(week))  # CORREÇÃO: Converter para string
+        current_app.logger.info(f"Calculando progresso semanal - Semana {week}: {start_date} até {end_date}")
+        
+        # CORREÇÃO: Usar func.date() para comparar apenas a parte da data
+        query = Entry.query.filter(
+            func.date(Entry.date) >= start_date,
+            func.date(Entry.date) <= end_date
         )
-
-        # Construir consulta filtrando pelo intervalo de datas
-        query = Entry.query.filter(Entry.date >= start_date, Entry.date <= end_date)
-
-        # Se for um funcionário específico, limitar
+        
         if employee_id:
             query = query.filter(Entry.employee_id == employee_id)
-
+        
         entries = query.all()
         current_app.logger.info(f"Entradas encontradas: {len(entries)}")
 
@@ -142,6 +132,7 @@ def calculate_weekly_progress(employee_id=None, week_num=None):
         current_app.logger.error(f"Erro ao calcular progresso semanal: {str(e)}")
         return {}
 
+# Função calculate_monthly_progress (linha ~160)
 def calculate_monthly_progress(employee_id=None, month=None, year=None):
     """Calcula o progresso mensal usando ciclos de 26 a 25"""
     try:
@@ -167,9 +158,10 @@ def calculate_monthly_progress(employee_id=None, month=None, year=None):
         
         current_app.logger.info(f"Calculando progresso mensal de {start_date} até {end_date}")
         
+        # CORREÇÃO: Usar func.date() para comparar apenas a parte da data
         query = Entry.query.filter(
-            Entry.date >= start_date,
-            Entry.date <= end_date
+            func.date(Entry.date) >= start_date,
+            func.date(Entry.date) <= end_date
         )
         
         if employee_id:
@@ -211,12 +203,13 @@ def calculate_executive_kpis():
         for employee in employees:
             # Pontos da semana atual
             current_week = get_current_week()
-            start_date, end_date = get_week_dates(current_week)
+            start_date, end_date = get_week_dates(str(current_week))
             
+            # Na função calculate_executive_kpis (linha ~210)
             weekly_points = db.session.query(func.sum(Entry.points)).filter(
                 Entry.employee_id == employee.id,
-                Entry.date >= start_date,
-                Entry.date <= end_date
+                func.date(Entry.date) >= start_date,
+                func.date(Entry.date) <= end_date
             ).scalar() or 0
             
             total_team_points += weekly_points
@@ -253,9 +246,10 @@ def calculate_executive_kpis():
             prev_start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
             prev_end_date = datetime.now().strftime('%Y-%m-%d')
         
+        # Na função calculate_executive_kpis (linha ~250)
         previous_week_points = db.session.query(func.sum(Entry.points)).filter(
-            Entry.date >= prev_start_date,
-            Entry.date <= prev_end_date
+            func.date(Entry.date) >= prev_start_date,
+            func.date(Entry.date) <= prev_end_date
         ).scalar() or 0
         
         # Calcular variação percentual
