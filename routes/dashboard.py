@@ -57,13 +57,18 @@ def employee_dashboard_enhanced():
         monthly_points = monthly_progress.get(employee_name, 0)
         
         # Buscar entradas da semana selecionada
-        # CORREÇÃO: Usar filtro por data como na versão que funciona
-        start_date, end_date = get_week_dates(selected_week_str)
-        entries = Entry.query.filter(
-            Entry.employee_id == employee_id,
-            Entry.date >= start_date,
-            Entry.date <= end_date
-        ).order_by(Entry.date.desc()).all()
+        # CORREÇÃO: Verificar se uma semana específica foi selecionada
+        if selected_week_str and selected_week_str.strip():  # Se uma semana específica foi selecionada
+            start_date, end_date = get_week_dates(selected_week_str)
+            entries = Entry.query.filter(
+                Entry.employee_id == employee_id,
+                Entry.date >= start_date,
+                Entry.date <= end_date
+            ).order_by(Entry.date.desc()).all()
+        else:  # Se "Todas" foi selecionado (valor vazio)
+            entries = Entry.query.filter(
+                Entry.employee_id == employee_id
+            ).order_by(Entry.date.desc()).all()
         
         # Buscar todas as entradas para histórico (manter como está)
         all_entries = Entry.query.filter(
@@ -96,7 +101,7 @@ def employee_dashboard_enhanced():
         
         # =================== Dados para gráficos ====================
         weekly_raw = get_weekly_evolution_data(employee_id)
-        monthly_raw = get_monthly_evolution_data()
+        monthly_raw = get_monthly_evolution_data(employee_id)  # ✅ CORREÇÃO: Passar employee_id
         daily_data = get_daily_data_by_employee(employee_id, selected_week)
 
         # DEBUG: Log dos dados brutos
@@ -120,42 +125,11 @@ def employee_dashboard_enhanced():
             'points': weekly_points_simple
         }
 
-        # DEBUG: Log dos dados processados
-        current_app.logger.info(f"DEBUG: weekly_data = {weekly_data}")
-
-        # ---- Monthly data (simplificado) ----
-        monthly_points_simple = []
-        monthly_labels = []
-        if monthly_raw:
-            monthly_labels = monthly_raw.get('labels', [])
-            # Filtrar apenas os dados do funcionário logado
-            employee_name = employee.real_name
-            for dataset in monthly_raw.get('datasets', []):
-                if dataset.get('label') == employee_name:
-                    monthly_points_simple = dataset.get('data', [])
-                    break
-
-        # ✅ CORREÇÃO: Verificar se monthly_labels é uma lista antes de usar len()
-        # DEBUG: Log adicional para debug
-        current_app.logger.info(f"DEBUG: monthly_labels type = {type(monthly_labels)}")
-        current_app.logger.info(f"DEBUG: monthly_labels value = {monthly_labels}")
-        current_app.logger.info(f"DEBUG: monthly_labels is None = {monthly_labels is None}")
-        current_app.logger.info(f"DEBUG: monthly_labels is list = {isinstance(monthly_labels, list)}")
-        
-        # ✅ VERIFICAÇÃO ROBUSTA: Garantir que len() está disponível
-        try:
-            if monthly_labels and isinstance(monthly_labels, list):
-                goals_array = [employee.weekly_goal] * len(monthly_labels)
-            else:
-                goals_array = []
-        except Exception as e:
-            current_app.logger.error(f"Erro ao usar len(): {str(e)}")
-            goals_array = []
-
+        # ---- Monthly data (CORRIGIDO: usar dados já filtrados) ----
         monthly_data = {
-            'labels': monthly_labels,
-            'points': monthly_points_simple,
-            'goals': goals_array
+            'labels': monthly_raw.get('labels', []),
+            'points': monthly_raw.get('points', []),
+            'goals': monthly_raw.get('goals', [])
         }
 
         # DEBUG: Log dos dados processados

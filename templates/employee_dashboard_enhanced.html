@@ -217,10 +217,12 @@
     // Dados para os gráficos
     var monthlyData = JSON.parse('{{ monthly_data|tojson|safe }}');
     var weeklyData = JSON.parse('{{ weekly_data|tojson|safe }}');
+    var employeeId = "{{ employee.id }}"; // ✅ ADICIONADO: ID do funcionário
     
     // DEBUG: Log dos dados
     console.log('DEBUG: monthlyData =', monthlyData);
     console.log('DEBUG: weeklyData =', weeklyData);
+    console.log('DEBUG: employeeId =', employeeId);
     
     // Mostra toast se houver mensagem de sucesso
     document.addEventListener('DOMContentLoaded', function(){

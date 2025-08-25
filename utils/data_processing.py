@@ -72,80 +72,107 @@ def get_weekly_progress_data():
         current_app.logger.error(f"Erro ao obter dados semanais: {str(e)}")
         return {'labels': [], 'datasets': []}
 
-def get_monthly_evolution_data():
-    """OTIMIZADO: Busca dados mensais com consulta única"""
+def get_monthly_evolution_data(employee_id=None):
+    """CORRIGIDO: Busca dados mensais filtrados por funcionário"""
     try:
-        current_app.logger.info("Iniciando busca de dados mensais otimizada")
+        current_app.logger.info(f"Iniciando busca de dados mensais para employee_id: {employee_id}")
         
-        # Buscar todos os funcionários de uma vez
-        employees = Employee.query.all()
-        current_app.logger.info(f"Funcionários para dados mensais: {len(employees)}")
-        
-        # Buscar TODOS os registros de uma vez
-        all_entries = Entry.query.all()
-        current_app.logger.info(f"Total de registros para processamento mensal: {len(all_entries)}")
-        
-        # Processar dados em memória
-        employee_data = {emp.id: emp.real_name for emp in employees}
-        monthly_data = {emp.id: [0] * 5 for emp in employees}  # 5 meses
-        
-        # Calcular datas dos meses (últimos 5 meses)
-        from datetime import datetime, timedelta
-        month_dates = []
-        today = datetime.now()
-        
-        for i in range(5):
-            month_date = today - timedelta(days=30*i)
-            month_start = month_date.replace(day=26)
-            if i == 0:
-                month_end = today
-            else:
-                month_end = month_start + timedelta(days=30)
-            month_dates.append((month_start.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d')))
-        
-        # Processar todos os registros de uma vez
-        for entry in all_entries:
-            entry_date = entry.date
-            if hasattr(entry_date, 'strftime'):
-                entry_date_str = entry_date.strftime('%Y-%m-%d')
-            else:
-                entry_date_str = str(entry_date)[:10]
+        # Se employee_id for fornecido, filtrar apenas esse funcionário
+        if employee_id:
+            employee = Employee.query.get(employee_id)
+            if not employee:
+                return {'labels': [], 'points': [], 'goals': []}
             
-            # Encontrar em qual mês está
-            for month_idx, (start_date, end_date) in enumerate(month_dates):
-                if start_date <= entry_date_str <= end_date:
-                    if entry.employee_id in monthly_data:
-                        monthly_data[entry.employee_id][month_idx] += entry.points
-                    break
+            # Buscar apenas registros do funcionário específico
+            all_entries = Entry.query.filter(Entry.employee_id == employee_id).all()
+            current_app.logger.info(f"Registros do funcionário {employee.real_name}: {len(all_entries)}")
+        else:
+            # Buscar todos os funcionários e registros (para CEO dashboard)
+            employees = Employee.query.all()
+            all_entries = Entry.query.all()
+            current_app.logger.info(f"Funcionários: {len(employees)}, Total de registros: {len(all_entries)}")
         
-        # Preparar dados para Chart.js
-        datasets = []
-        labels = [f"Semana {i+1}" for i in range(5)]
+        # CORREÇÃO: Calcular datas das semanas (últimas 5 semanas)
+        from datetime import datetime, timedelta
+        from utils.calculations import get_week_dates
         
-        for employee in employees:
-            if employee.id in monthly_data:
-                # ✅ CORES FIXAS E DISTINTAS PARA CADA FUNCIONÁRIO
-                employee_colors = get_employee_color(employee.real_name)
-                dataset = {
-                    'label': employee.real_name,
-                    'data': monthly_data[employee.id],
-                    'borderColor': employee_colors['border'],
-                    'backgroundColor': employee_colors['bg'],
-                    'tension': 0.4
-                }
-                datasets.append(dataset)
-                current_app.logger.info(f"Dataset criado para {employee.real_name}: {monthly_data[employee.id]}")
+        week_dates = []
+        for week_num in range(1, 6):
+            start_date, end_date = get_week_dates(str(week_num))
+            week_dates.append((start_date, end_date))
         
-        current_app.logger.info(f"Resultado final mensal: {len(datasets)} datasets")
+        # Se for para um funcionário específico, retornar dados simples
+        if employee_id:
+            weekly_points = [0] * 5  # 5 semanas
+            
+            # Processar registros do funcionário
+            for entry in all_entries:
+                entry_date = entry.date
+                if hasattr(entry_date, 'strftime'):
+                    entry_date_str = entry_date.strftime('%Y-%m-%d')
+                else:
+                    entry_date_str = str(entry_date)[:10]
+                
+                # Encontrar em qual semana está
+                for week_idx, (start_date, end_date) in enumerate(week_dates):
+                    if start_date <= entry_date_str <= end_date:
+                        weekly_points[week_idx] += entry.points
+                        break
+            
+            labels = [f"Semana {i+1}" for i in range(5)]
+            goals = [employee.weekly_goal] * 5 if employee.weekly_goal else [0] * 5
+            
+            return {
+                'labels': labels,
+                'points': weekly_points,
+                'goals': goals
+            }
         
-        return {
-            'labels': labels,
-            'datasets': datasets
-        }
+        # Código original para múltiplos funcionários (CEO dashboard)
+        else:
+            employees = Employee.query.all()
+            employee_data = {emp.id: emp.real_name for emp in employees}
+            monthly_data = {emp.id: [0] * 5 for emp in employees}
+            
+            # Processar todos os registros
+            for entry in all_entries:
+                entry_date = entry.date
+                if hasattr(entry_date, 'strftime'):
+                    entry_date_str = entry_date.strftime('%Y-%m-%d')
+                else:
+                    entry_date_str = str(entry_date)[:10]
+                
+                # Encontrar em qual semana está
+                for week_idx, (start_date, end_date) in enumerate(week_dates):
+                    if start_date <= entry_date_str <= end_date:
+                        if entry.employee_id in monthly_data:
+                            monthly_data[entry.employee_id][week_idx] += entry.points
+                        break
+            
+            # Preparar dados para Chart.js
+            datasets = []
+            labels = [f"Semana {i+1}" for i in range(5)]
+            
+            for employee in employees:
+                if employee.id in monthly_data:
+                    employee_colors = get_employee_color(employee.real_name)
+                    dataset = {
+                        'label': employee.real_name,
+                        'data': monthly_data[employee.id],
+                        'borderColor': employee_colors['border'],
+                        'backgroundColor': employee_colors['bg'],
+                        'tension': 0.4
+                    }
+                    datasets.append(dataset)
+            
+            return {
+                'labels': labels,
+                'datasets': datasets
+            }
         
     except Exception as e:
         current_app.logger.error(f"Erro ao obter dados mensais: {str(e)}")
-        return {'labels': [], 'datasets': []}
+        return {'labels': [], 'points': [], 'goals': []}
 
 def get_daily_data(employee_id=None, week=None):
     """Retorna dados diários para o ciclo atual (desde dia 26)"""

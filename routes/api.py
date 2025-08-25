@@ -534,107 +534,69 @@ def api_entries():
         employee_id = request.args.get('employee_id', type=int)
         week = request.args.get('week', type=str)
 
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: Iniciando api_entries")
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: page={page}, per_page={per_page}, employee_id={employee_id}, week={week}")
+        current_app.logger.info(f"🔍 DEBUG: Iniciando api_entries")
+        current_app.logger.info(f"🔍 DEBUG: page={page}, per_page={per_page}, employee_id={employee_id}, week={week}")
 
         query = Entry.query.join(Employee)
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: Query criada com JOIN Employee")
+        current_app.logger.info(f"🔍 DEBUG: Query criada com JOIN Employee")
         
         if employee_id:
             query = query.filter(Entry.employee_id == employee_id)
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Filtro por employee_id={employee_id} aplicado")
+            current_app.logger.info(f"🔍 DEBUG: Filtro por employee_id={employee_id} aplicado")
 
-        # ✅ ADICIONAR FILTRO DE SEMANA
+        # ✅ CORREÇÃO: ADICIONAR FILTRO DE SEMANA
         if week and week != '':
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Aplicando filtro de semana: {week}")
-            # CORREÇÃO: Usar filtro por data como na versão que funciona
+            current_app.logger.info(f"🔍 DEBUG: Aplicando filtro de semana: {week}")
+            # Usar filtro por data como na versão que funciona
             from utils.calculations import get_week_dates
             start_date, end_date = get_week_dates(week)
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Semana {week} - De {start_date} até {end_date}")
+            current_app.logger.info(f"🔍 DEBUG: Semana {week} - De {start_date} até {end_date}")
             
             # Filtrar por data da semana
             query = query.filter(Entry.date >= start_date, Entry.date <= end_date)
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Filtro de data aplicado: {start_date} <= date <= {end_date}")
+            current_app.logger.info(f"🔍 DEBUG: Filtro de data aplicado: {start_date} <= date <= {end_date}")
 
         # Paginação
         pagination = query.order_by(Entry.date.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: Paginação criada - total={pagination.total}, pages={pagination.pages}")
+        current_app.logger.info(f"🔍 DEBUG: Paginação criada - total={pagination.total}, pages={pagination.pages}")
         
         entries_data = []
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: Processando {len(pagination.items)} registros")
+        current_app.logger.info(f"🔍 DEBUG: Processando {len(pagination.items)} registros")
         
         for i, entry in enumerate(pagination.items):
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Processando registro {i+1}/{len(pagination.items)}")
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Entry ID: {entry.id}")
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Entry employee_id: {entry.employee_id}")
-            
-            # DEBUG MASSIVO: Verificar se o employee existe
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: hasattr(entry, 'employee'): {hasattr(entry, 'employee')}")
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: entry.employee: {entry.employee}")
+            current_app.logger.info(f"🔍 DEBUG: Processando registro {i+1}/{len(pagination.items)}")
             
             if hasattr(entry, 'employee') and entry.employee:
-                current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee encontrado!")
-                current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee ID: {entry.employee.id}")
-                current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee real_name: {entry.employee.real_name}")
-                current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee username: {entry.employee.username}")
+                current_app.logger.info(f"🔍 DEBUG: Employee encontrado: {entry.employee.real_name}")
                 
-                employee_name = entry.employee.real_name
-                current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee name definido como: '{employee_name}'")
+                entries_data.append({
+                    'id': entry.id,
+                    'date': entry.date.strftime('%Y-%m-%d %H:%M:%S') if hasattr(entry.date, 'strftime') else str(entry.date),
+                    'employee_name': entry.employee.real_name,
+                    'refinery': entry.refinery,
+                    'points': entry.points,
+                    'observations': entry.observations
+                })
             else:
-                current_app.logger.warning(f"🔍 DEBUG MASSIVO: Employee NÃO encontrado para entry {entry.id}")
-                current_app.logger.warning(f"🔍 DEBUG MASSIVO: Tentando buscar employee manualmente...")
-                
-                # Tentar buscar employee manualmente
-                try:
-                    employee = Employee.query.get(entry.employee_id)
-                    if employee:
-                        current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee encontrado manualmente: {employee.real_name}")
-                        employee_name = employee.real_name
-                    else:
-                        current_app.logger.error(f"🔍 DEBUG MASSIVO: Employee com ID {entry.employee_id} NÃO existe no banco!")
-                        employee_name = "Funcionário Desconhecido"
-                except Exception as e:
-                    current_app.logger.error(f"🔍 DEBUG MASSIVO: Erro ao buscar employee: {str(e)}")
-                    employee_name = "Erro ao buscar funcionário"
-            
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Employee name final: '{employee_name}'")
-            
-            entry_data = {
-                'id': entry.id,
-                'employee_name': employee_name,
-                'date': entry.date,
-                'refinery': entry.refinery,
-                'points': entry.points,
-                'observations': entry.observations
-            }
-            
-            current_app.logger.info(f"🔍 DEBUG MASSIVO: Entry data criado: {entry_data}")
-            entries_data.append(entry_data)
+                current_app.logger.warning(f"🔍 DEBUG: Employee não encontrado para entry {entry.id}")
         
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: Total de entries_data: {len(entries_data)}")
-        
-        response_data = {
+        return jsonify({
             'entries': entries_data,
             'pagination': {
-                'page': page,
-                'per_page': per_page,
-                'total': pagination.total,
+                'page': pagination.page,
                 'pages': pagination.pages,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
                 'has_next': pagination.has_next,
                 'has_prev': pagination.has_prev
             }
-        }
-        
-        current_app.logger.info(f"🔍 DEBUG MASSIVO: Response data criado com {len(entries_data)} entries")
-        
-        return jsonify(response_data)
+        })
         
     except Exception as e:
-        current_app.logger.error(f"🔍 DEBUG MASSIVO: Erro ao obter registros: {str(e)}")
-        current_app.logger.error(f"🔍 DEBUG MASSIVO: Stack trace: {e.__traceback__}")
+        current_app.logger.error(f"Erro ao obter registros: {str(e)}")
         return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @api_bp.route('/api/cache/stats')
