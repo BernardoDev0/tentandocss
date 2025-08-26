@@ -1,43 +1,183 @@
-/* ===================================================================
-   MAIN CSS - Arquivo Principal de Importação
-   Sistema CSS Modular Corporativo
-   ================================================================= */
+/* Main bundle: preserves existing cascade and responsive behavior */
+@import url('./base.css');
+@import url('./forms.css');
+@import url('./header.css');
+@import url('./sidebar.css');
+@import url('./style.css');
+@import url('./tables.css');
+@import url('./tabs.css');
+@import url('./responsive.css');
 
-/* === IMPORTS DESABILITADOS - USANDO BUNDLE.MIN.CSS === */
+/* Structural aliases and integrity fixes (non-visual) */
 
-/* 1. Variáveis CSS (devem vir primeiro) */
-@import url('./variables.css'); 
+/* Error helpers used by templates */
+.error,
+.error-message {
+  color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
 
-/* 2. Reset e estilos base */
- @import url('./base.css');
+/* Employee dashboard tabs (not to be confused with .tab-button) */
+.tabs {
+  display: flex;
+  gap: var(--spacing-md);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  margin-bottom: var(--spacing-md);
+}
+.tab {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--primary);
+}
 
-/* 3. Layout e estrutura */
-@import url('./layout/dashboard.css');
-@import url('./layout/grid.css');
-@import url('./layout/header.css');
+/* Employee dashboard stat layout/cards */
+.dashboard-container {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: var(--spacing-lg);
+}
+.dashboard-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.3);
+}
+.dashboard-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dashboard-card .stat-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
 
-/* 4. Componentes */
-@import url('./components/cards.css');
-@import url('./components/buttons.css');
-@import url('./components/tabs.css');
-@import url('./components/forms.css');
+/* Employee dashboard progress helpers */
+.progress-container {
+  margin-top: var(--spacing-sm);
+}
+.progress-bar-container {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+  overflow: hidden;
+  height: 10px;
+}
+.progress-bar.progress-green {
+  background: linear-gradient(90deg, rgba(34,197,94,0.9), rgba(16,185,129,0.9));
+}
+.progress-bar.progress-orange {
+  background: linear-gradient(90deg, rgba(245,158,11,0.9), rgba(251,146,60,0.9));
+}
+.progress-bar.progress-red {
+  background: linear-gradient(90deg, rgba(239,68,68,0.9), rgba(248,113,113,0.9));
+}
+.progress-percentage {
+  font-weight: 600;
+  text-align: right;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
 
-/* 5. Utilitários (devem vir por último) */
-@import url('./utilities/animations.css');
-@import url('./utilities/helpers.css');
-@import url('./utilities/responsive.css');
+/* Records wrapper for tables */
+.records-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 1rem;
+  overflow: auto;
+}
 
-/* ===================================================================
-   ⚡ PERFORMANCE OPTIMIZED ⚡
-   
-   Os imports foram desabilitados para usar bundle.min.css
-   que contém todos os estilos minificados em um único arquivo.
-   
-   Benefícios da otimização:
-   ✅ 1 request CSS ao invés de 12
-   ✅ CSS minificado (67KB vs ~230KB)
-   ✅ Render não-bloqueante
-   ✅ LCP drasticamente reduzido
-   ================================================================= */
+/* Excel dashboard structures */
+.excel-dashboard-container {
+  display: block;
+}
+.excel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.excel-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.excel-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.excel-stat-card {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.excel-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
+}
+.excel-chart-container .chart-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.excel-message {
+  margin-top: 12px;
+  color: var(--text-secondary);
+}
 
-/* MAIN CSS simplificado para restaurar estilos originais */
+/* Edit entry minimal styles to align with design system */
+.glass-card {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  margin: 2rem auto;
+}
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Login page minor helpers */
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-lg);
+}
+.login-logo img {
+  width: 64px;
+  height: 64px;
+}
+.login-footer {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  color: var(--text-secondary);
+}
+.form-group {
+  margin-bottom: var(--spacing-md);
+}

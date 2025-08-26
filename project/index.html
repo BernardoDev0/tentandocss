@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard CEO - Interface Moderna</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/tabs.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/forms.css">
+    <link rel="stylesheet" href="css/tables.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i data-lucide="trending-up"></i>
+                    <span class="logo-text">Dashboard CEO</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" data-tab="dashboard">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-tab="equipe">
+                            <i data-lucide="users"></i>
+                            <span class="nav-text">Equipe</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-tab="graficos">
+                            <i data-lucide="bar-chart-3"></i>
+                            <span class="nav-text">Gráficos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-tab="registros">
+                            <i data-lucide="table"></i>
+                            <span class="nav-text">Registros</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-tab="excel">
+                            <i data-lucide="file-spreadsheet"></i>
+                            <span class="nav-text">Relatórios</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="sidebar-footer">
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            <i data-lucide="user"></i>
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">Admin</span>
+                            <span class="user-role">CEO</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="breadcrumb">
+                        <span class="breadcrumb-item active">Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-actions">
+                        <button class="action-btn">
+                            <i data-lucide="bell"></i>
+                            <span class="notification-badge">3</span>
+                        </button>
+                        <button class="action-btn">
+                            <i data-lucide="settings"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard Tab -->
+                <div class="tab-content active" id="dashboard">
+                    <div class="page-header">
+                        <h1 class="page-title">Visão Geral da Performance</h1>
+                        <p class="page-subtitle">Acompanhe o desempenho da sua equipe em tempo real</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <section class="stats-grid">
+                        <div class="stat-card primary">
+                            <div class="stat-icon">
+                                <i data-lucide="trending-up"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">1,026</h3>
+                                <p class="stat-label">Total de Pontos desta Semana</p>
+                                <div class="stat-change positive">
+                                    <i data-lucide="arrow-up"></i>
+                                    <span>+12.5%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card success">
+                            <div class="stat-icon">
+                                <i data-lucide="target"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">32,881</h3>
+                                <p class="stat-label">Pontos Mensais Totais</p>
+                                <div class="stat-change positive">
+                                    <i data-lucide="arrow-up"></i>
+                                    <span>+8.2%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card warning">
+                            <div class="stat-icon">
+                                <i data-lucide="activity"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">10.2%</h3>
+                                <p class="stat-label">Progresso da Equipe esta Semana</p>
+                                <div class="stat-change negative">
+                                    <i data-lucide="arrow-down"></i>
+                                    <span>-2.1%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card info">
+                            <div class="stat-icon">
+                                <i data-lucide="users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">4</h3>
+                                <p class="stat-label">Funcionários Ativos</p>
+                                <div class="stat-change neutral">
+                                    <i data-lucide="minus"></i>
+                                    <span>0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Progress Section -->
+                    <section class="progress-section">
+                        <div class="progress-card">
+                            <div class="progress-header">
+                                <div class="progress-title">
+                                    <i data-lucide="bar-chart"></i>
+                                    <span>Progresso Geral da Equipe - Mensal</span>
+                                </div>
+                                <div class="progress-stats">
+                                    <span class="progress-current">32,881 de 29,500 pontos</span>
+                                    <span class="progress-percent success">111.5% concluído</span>
+                                </div>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" data-progress="111.5"></div>
+                                </div>
+                                <div class="progress-labels">
+                                    <span>0</span>
+                                    <span>29,500</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Equipe Tab -->
+                <div class="tab-content" id="equipe">
+                    <div class="page-header">
+                        <h1 class="page-title">Gestão da Equipe</h1>
+                        <div class="page-actions">
+                            <div class="form-group">
+                                <label for="week-select">Semana:</label>
+                                <select id="week-select" class="form-select">
+                                    <option value="5">Semana 5</option>
+                                    <option value="4">Semana 4</option>
+                                    <option value="3">Semana 3</option>
+                                    <option value="2">Semana 2</option>
+                                    <option value="1">Semana 1</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee Cards -->
+                    <section class="employees-grid">
+                        <div class="employee-card">
+                            <div class="employee-header">
+                                <div class="employee-avatar rodrigo">R</div>
+                                <div class="employee-info">
+                                    <h4>Rodrigo</h4>
+                                    <p>Desenvolvedor Frontend</p>
+                                </div>
+                                <span class="status-badge danger">
+                                    <i data-lucide="alert-triangle"></i>
+                                    Abaixo da Meta
+                                </span>
+                            </div>
+                            
+                            <div class="employee-stats">
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar-days"></i> Semanal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>0 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>2,375 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>0.0% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar"></i> Mensal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>0 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>9,500 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>0.0% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="employee-progress">
+                                <div class="progress-info">
+                                    <span>Progresso Semanal</span>
+                                    <span>0 / 2,375</span>
+                                </div>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-fill" style="width: 0%"></div>
+                                </div>
+                                <p class="motivation-text">
+                                    <i data-lucide="rocket"></i>
+                                    Vamos começar! 100% da meta ainda disponível
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="employee-card">
+                            <div class="employee-header">
+                                <div class="employee-avatar mauricio">M</div>
+                                <div class="employee-info">
+                                    <h4>Maurício</h4>
+                                    <p>Desenvolvedor Backend</p>
+                                </div>
+                                <span class="status-badge warning">
+                                    <i data-lucide="clock"></i>
+                                    Em Progresso
+                                </span>
+                            </div>
+                            
+                            <div class="employee-stats">
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar-days"></i> Semanal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>523 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>2,375 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>22.0% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar"></i> Mensal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>10,510 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>9,500 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>110.6% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="employee-progress">
+                                <div class="progress-info">
+                                    <span>Progresso Semanal</span>
+                                    <span>523 / 2,375</span>
+                                </div>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-fill" style="width: 22%"></div>
+                                </div>
+                                <p class="motivation-text">
+                                    <i data-lucide="rocket"></i>
+                                    Ótimo progresso! Continue assim
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="employee-card">
+                            <div class="employee-header">
+                                <div class="employee-avatar matheus">M</div>
+                                <div class="employee-info">
+                                    <h4>Matheus</h4>
+                                    <p>Designer UX/UI</p>
+                                </div>
+                                <span class="status-badge success">
+                                    <i data-lucide="check-circle"></i>
+                                    Meta Atingida
+                                </span>
+                            </div>
+                            
+                            <div class="employee-stats">
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar-days"></i> Semanal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>503 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>2,675 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>18.8% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar"></i> Mensal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>11,001 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>10,500 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>104.8% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="employee-progress">
+                                <div class="progress-info">
+                                    <span>Progresso Semanal</span>
+                                    <span>503 / 2,675</span>
+                                </div>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-fill" style="width: 18.8%"></div>
+                                </div>
+                                <p class="motivation-text">
+                                    <i data-lucide="trophy"></i>
+                                    Parabéns! Meta mensal superada
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="employee-card">
+                            <div class="employee-header">
+                                <div class="employee-avatar wesley">W</div>
+                                <div class="employee-info">
+                                    <h4>Wesley</h4>
+                                    <p>DevOps Engineer</p>
+                                </div>
+                                <span class="status-badge success">
+                                    <i data-lucide="check-circle"></i>
+                                    Meta Atingida
+                                </span>
+                            </div>
+                            
+                            <div class="employee-stats">
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar-days"></i> Semanal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>0 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>2,375 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>0.0% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-section">
+                                    <h5><i data-lucide="calendar"></i> Mensal</h5>
+                                    <div class="stat-list">
+                                        <div class="stat-item">
+                                            <i data-lucide="star"></i>
+                                            <span>11,370 Pontos</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="target"></i>
+                                            <span>9,500 Meta</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <i data-lucide="trending-up"></i>
+                                            <span>119.7% Progresso</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="employee-progress">
+                                <div class="progress-info">
+                                    <span>Progresso Semanal</span>
+                                    <span>0 / 2,375</span>
+                                </div>
+                                <div class="mini-progress">
+                                    <div class="mini-progress-fill" style="width: 0%"></div>
+                                </div>
+                                <p class="motivation-text">
+                                    <i data-lucide="crown"></i>
+                                    Meta mensal já atingida! Descanse
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Gráficos Tab -->
+                <div class="tab-content" id="graficos">
+                    <div class="page-header">
+                        <h1 class="page-title">Análise de Performance</h1>
+                        <p class="page-subtitle">Visualize o desempenho através de gráficos interativos</p>
+                    </div>
+
+                    <section class="charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i data-lucide="bar-chart"></i>
+                                    <span>Progresso Semanal</span>
+                                </div>
+                                <button class="chart-action">
+                                    <i data-lucide="maximize-2"></i>
+                                </button>
+                            </div>
+                            <div class="chart-content">
+                                <div class="chart-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Carregando gráfico...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i data-lucide="line-chart"></i>
+                                    <span>Progresso Mensal</span>
+                                </div>
+                                <button class="chart-action">
+                                    <i data-lucide="maximize-2"></i>
+                                </button>
+                            </div>
+                            <div class="chart-content">
+                                <div class="chart-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Carregando gráfico...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i data-lucide="activity"></i>
+                                    <span>Progresso Diário</span>
+                                </div>
+                                <button class="chart-action">
+                                    <i data-lucide="maximize-2"></i>
+                                </button>
+                            </div>
+                            <div class="chart-content">
+                                <div class="chart-placeholder">
+                                    <div class="loading-spinner"></div>
+                                    <p>Carregando gráfico...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Registros Tab -->
+                <div class="tab-content" id="registros">
+                    <div class="page-header">
+                        <h1 class="page-title">Registros de Atividades</h1>
+                        <div class="page-actions">
+                            <button class="btn btn-primary">
+                                <i data-lucide="plus"></i>
+                                Novo Registro
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <section class="filters-section">
+                        <div class="filters-grid">
+                            <div class="form-group">
+                                <label for="semana-filter">Semana:</label>
+                                <select id="semana-filter" class="form-select">
+                                    <option value="">Todas</option>
+                                    <option value="1">Semana 1</option>
+                                    <option value="2">Semana 2</option>
+                                    <option value="3">Semana 3</option>
+                                    <option value="4">Semana 4</option>
+                                    <option value="5">Semana 5</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="funcionario-filter">Funcionário:</label>
+                                <select id="funcionario-filter" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="Rodrigo">Rodrigo</option>
+                                    <option value="Maurício">Maurício</option>
+                                    <option value="Matheus">Matheus</option>
+                                    <option value="Wesley">Wesley</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="search-input">Buscar:</label>
+                                <div class="search-input">
+                                    <i data-lucide="search"></i>
+                                    <input type="text" id="search-input" placeholder="Buscar registros...">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Table -->
+                    <section class="table-section">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Horário</th>
+                                        <th>Funcionário</th>
+                                        <th>Refinaria</th>
+                                        <th>Pontos</th>
+                                        <th>Observações</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>25/08/2025</td>
+                                        <td>14:49</td>
+                                        <td>
+                                            <div class="user-cell">
+                                                <div class="user-avatar-small matheus">M</div>
+                                                <span>Matheus</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-info">RPBC</span></td>
+                                        <td><span class="points-badge">503</span></td>
+                                        <td>continuação hdtnk</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="action-btn edit" title="Editar">
+                                                    <i data-lucide="edit-2"></i>
+                                                </button>
+                                                <button class="action-btn delete" title="Excluir">
+                                                    <i data-lucide="trash-2"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>25/08/2025</td>
+                                        <td>11:59</td>
+                                        <td>
+                                            <div class="user-cell">
+                                                <div class="user-avatar-small mauricio">M</div>
+                                                <span>Maurício</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-success">REVAP</span></td>
+                                        <td><span class="points-badge">523</span></td>
+                                        <td>U-210 RVP</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="action-btn edit" title="Editar">
+                                                    <i data-lucide="edit-2"></i>
+                                                </button>
+                                                <button class="action-btn delete" title="Excluir">
+                                                    <i data-lucide="trash-2"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>22/08/2025</td>
+                                        <td>14:34</td>
+                                        <td>
+                                            <div class="user-cell">
+                                                <div class="user-avatar-small matheus">M</div>
+                                                <span>Matheus</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-info">RPBC</span></td>
+                                        <td><span class="points-badge">602</span></td>
+                                        <td>CONTINUAÇÃO HDTNK</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="action-btn edit" title="Editar">
+                                                    <i data-lucide="edit-2"></i>
+                                                </button>
+                                                <button class="action-btn delete" title="Excluir">
+                                                    <i data-lucide="trash-2"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>22/08/2025</td>
+                                        <td>11:52</td>
+                                        <td>
+                                            <div class="user-cell">
+                                                <div class="user-avatar-small mauricio">M</div>
+                                                <span>Maurício</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-success">REVAP</span></td>
+                                        <td><span class="points-badge">558</span></td>
+                                        <td>U-210 RVP</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="action-btn edit" title="Editar">
+                                                    <i data-lucide="edit-2"></i>
+                                                </button>
+                                                <button class="action-btn delete" title="Excluir">
+                                                    <i data-lucide="trash-2"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>22/08/2025</td>
+                                        <td>11:45</td>
+                                        <td>
+                                            <div class="user-cell">
+                                                <div class="user-avatar-small wesley">W</div>
+                                                <span>Wesley</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-warning">REPLAN</span></td>
+                                        <td><span class="points-badge zero">0</span></td>
+                                        <td>META DO MÊS ATINGIDA!</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="action-btn edit" title="Editar">
+                                                    <i data-lucide="edit-2"></i>
+                                                </button>
+                                                <button class="action-btn delete" title="Excluir">
+                                                    <i data-lucide="trash-2"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Excel Tab -->
+                <div class="tab-content" id="excel">
+                    <div class="page-header">
+                        <h1 class="page-title">Relatórios e Exportação</h1>
+                        <p class="page-subtitle">Gere e baixe relatórios personalizados</p>
+                    </div>
+
+                    <section class="export-section">
+                        <div class="export-grid">
+                            <div class="export-card">
+                                <div class="export-icon">
+                                    <i data-lucide="file-spreadsheet"></i>
+                                </div>
+                                <h3>Relatório Semanal</h3>
+                                <p>Dados de performance da semana atual</p>
+                                <button class="btn btn-success">
+                                    <i data-lucide="download"></i>
+                                    Baixar Excel
+                                </button>
+                            </div>
+
+                            <div class="export-card">
+                                <div class="export-icon">
+                                    <i data-lucide="calendar"></i>
+                                </div>
+                                <h3>Relatório Mensal</h3>
+                                <p>Análise completa do mês</p>
+                                <button class="btn btn-success">
+                                    <i data-lucide="download"></i>
+                                    Baixar Excel
+                                </button>
+                            </div>
+
+                            <div class="export-card">
+                                <div class="export-icon">
+                                    <i data-lucide="database"></i>
+                                </div>
+                                <h3>Relatório Completo</h3>
+                                <p>Todos os dados históricos</p>
+                                <button class="btn btn-success">
+                                    <i data-lucide="download"></i>
+                                    Baixar Excel
+                                </button>
+                            </div>
+
+                            <div class="export-card">
+                                <div class="export-icon">
+                                    <i data-lucide="users"></i>
+                                </div>
+                                <h3>Relatório por Funcionário</h3>
+                                <p>Performance individual detalhada</p>
+                                <button class="btn btn-success">
+                                    <i data-lucide="download"></i>
+                                    Baixar Excel
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

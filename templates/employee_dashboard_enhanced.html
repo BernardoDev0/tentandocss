@@ -5,29 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de {{ employee.real_name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/employee_dashboard.css') }}">
-    <!-- Chart.js e plugins -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    
-    <!-- CSS inline para glass-table -->
-    <style>
-        :root {
-            --text-primary: #f8fafc;
-            --text-secondary: #e2e8f0;
-            --glass-border: rgba(148,163,184,0.2);
-            --radius-lg: 16px;
-        }
-        .glass-table{width:100%;border-collapse:collapse;background:rgba(30,41,59,0.35);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius-lg);overflow:hidden}
-        .glass-table th{padding:0.75rem 0.9rem;text-align:center;background:rgba(30,41,59,0.75);color:var(--text-primary);font-weight:600;font-size:0.9rem}
-        .glass-table td{padding:0.65rem 0.9rem;border-bottom:1px solid rgba(148,163,184,0.15);color:var(--text-secondary);font-size:0.85rem}
-        .glass-table tbody tr:hover{background:rgba(255,255,255,0.03)}
-    </style>
+    <!-- removido: bloco <style> com glass-table (agora em components/tables.css) -->
 </head>
 <body class="dashboard-employee">
-    <div class="container">
-    <a href="{{ url_for('auth.index') }}" class="back-button">Voltar</a>
+    <div class="app">
+        <aside class="sidebar" id="app-sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="logo-text">Monitorar</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebar-toggle" title="Recolher/Expandir">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" data-tab-target="register">
+                            <i class="fas fa-pen"></i><span class="nav-text">Registrar</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-tab-target="evolution">
+                            <i class="fas fa-chart-line"></i><span class="nav-text">Evolução</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-tab-target="history">
+                            <i class="fas fa-history"></i><span class="nav-text">Histórico</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Abrir menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="breadcrumb">
+                        <span class="breadcrumb-item active">Dashboard do Funcionário</span>
+                    </div>
+                </div>
+                <div class="header-right"></div>
+            </header>
+
+            <div class="content">
+                <div class="container">
+                    <a href="{{ url_for('auth.index') }}" class="back-button">Voltar</a>
     
     <h1>Dashboard de {{ employee.real_name }}</h1>
     
@@ -157,10 +185,10 @@
     
     <div id="history" class="tab-content">
     <h2>Seus Registros</h2>
-    <div class="records-card" style="background:rgba(15,23,42,0.9);border:1px solid rgba(148,163,184,0.2);border-radius:16px;padding:1rem;overflow:auto">
+    <div class="records-card">
         <table class="glass-table">
             <thead>
-                <tr style="background:rgba(30,41,59,0.85)">
+                <tr>
                     <th>Data</th>
                     <th>Horário</th>
                     <th>Refinaria</th>
@@ -201,7 +229,7 @@
             {% endfor %}
             {% else %}
             <tr>
-                <td colspan="5" style="text-align:center;padding:1rem">Nenhum registro encontrado.</td>
+                <td colspan="5" class="text-center">Nenhum registro encontrado.</td>
             </tr>
             {% endif %}
             </tbody>
@@ -211,6 +239,7 @@
     </div>
     
     <!-- Carregando o JavaScript externo -->
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chart-optimized.js') }}"></script>
     <script src="{{ url_for('static', filename='employee_dashboard.js') }}"></script>
     <script>

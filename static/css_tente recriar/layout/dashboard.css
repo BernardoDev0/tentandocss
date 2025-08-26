@@ -1570,3 +1570,145 @@ html {
   color: #ef4444;
   margin-right: 0.18em;
 }
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 
+    all var(--duration-normal) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-gentle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.btn::before { /* ... */ }
+.btn:hover { /* ... */ }
+.btn:hover::before { /* ... */ }
+.btn:active { /* ... */ }
+.btn-primary { /* ... */ }
+.btn-primary:hover { /* ... */ }
+.btn-secondary { /* ... */ }
+.btn-secondary:hover { /* ... */ }
+/* ===== AJUSTES EXTRAÍDOS DO INLINE (CEO/EMPLOYEE) ===== */
+
+/* Seção de progresso da equipe (antes inline) */
+.team-progress-section {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.progress-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Barra de progresso da equipe */
+.team-progress-bar {
+  background: #334155;
+  border-radius: 16px;
+  height: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.team-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan) 100%);
+  border-radius: 16px;
+  transition: width 0.6s ease;
+  position: relative;
+}
+
+/* Botão de toggle (antes inline por id) */
+#toggle-points-reais {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: rgba(30,41,59,0.7);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#toggle-icon { color: var(--accent-blue); }
+
+/* Posicionamento do botão expandir e ações do gráfico */
+.chart-card { position: relative; }
+.chart-actions {
+  position: absolute !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  z-index: 10 !important;
+}
+.expand-btn {
+  background: rgba(30,41,59,0.0);
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  margin-right: .5rem;
+  display: flex;
+  align-items: center;
+  transition: color .25s;
+  position: relative !important;
+  z-index: 11 !important;
+  pointer-events: auto !important;
+}
+.expand-btn:hover { color: #f1f5f9; }
+
+/* Área de tabela de registros (antes inline) */
+.records-card {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  overflow: auto;
+}
+
+/* Week selector (antes inline) */
+.week-selector { margin-bottom: 1rem; }
+.week-selector label { margin-left: 1rem; }
+
+/* Botões da seção de registros (antes inline por id) */
+#btn-delete-all { background: #ef4444; }
+#btn-export-excel { background: var(--accent-blue); }
+
+/* Auxiliar: containers escondidos antes inline */
+#excel-stats-grid.hidden,
+#excel-chart-container.hidden,
+#weekly-data.hidden,
+#monthly-data.hidden,
+#daily-data.hidden { display: none; }

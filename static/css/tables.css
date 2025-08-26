@@ -1,0 +1,333 @@
+/* Table Styles */
+.table-section {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.data-table thead {
+    background-color: var(--bg-hover);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    position: relative;
+}
+
+.data-table th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 1px;
+    background-color: var(--border-color);
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table td {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+/* User Cell */
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.user-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-avatar-small.rodrigo {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+}
+
+.user-avatar-small.mauricio {
+    background: linear-gradient(135deg, var(--warning), var(--warning-light));
+}
+
+.user-avatar-small.matheus {
+    background: linear-gradient(135deg, var(--success), var(--success-light));
+}
+
+.user-avatar-small.wesley {
+    background: linear-gradient(135deg, var(--info), var(--info-light));
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.action-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.action-btn.edit:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+}
+
+.action-btn.delete:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.action-btn i {
+    font-size: 14px;
+}
+
+/* Table Responsive */
+@media (max-width: 768px) {
+    .data-table {
+        font-size: var(--font-size-xs);
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: var(--spacing-md) var(--spacing-sm);
+    }
+    
+    .data-table th {
+        font-size: var(--font-size-xs);
+    }
+    
+    .user-cell {
+        gap: var(--spacing-sm);
+    }
+    
+    .user-avatar-small {
+        width: 28px;
+        height: 28px;
+        font-size: var(--font-size-xs);
+    }
+    
+    .action-buttons {
+        gap: var(--spacing-xs);
+    }
+    
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        padding: var(--spacing-xs);
+    }
+}
+
+/* Empty State */
+.table-empty {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-muted);
+}
+
+.table-empty i {
+    font-size: 48px;
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.5;
+}
+
+.table-empty h3 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
+}
+
+.table-empty p {
+    font-size: var(--font-size-sm);
+    margin-bottom: 0;
+}
+
+/* Table Loading */
+.table-loading {
+    text-align: center;
+    padding: var(--spacing-2xl);
+}
+
+.table-loading .loading-spinner {
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Pagination */
+.table-pagination {
+    display: flex;
+    justify-content: space-between; /* fixed: 'between' -> 'space-between' */
+    align-items: center;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-hover);
+}
+
+.pagination-info {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.pagination-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.pagination-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Compatibility: glass-table maps to data table styling */
+.glass-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.glass-table thead {
+    background-color: var(--bg-hover);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.glass-table th {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.glass-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.glass-table td {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+/* Compatibility: table buttons used in templates */
+.table-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-btn:hover { background-color: var(--bg-hover); color: var(--text-primary); }
+.table-btn.edit-btn:hover { background-color: rgba(59,130,246,0.1); color: var(--primary); }
+.table-btn.delete-btn:hover { background-color: rgba(239,68,68,0.1); color: var(--danger); }
+
+/* Scope table action buttons to avoid conflict with header buttons */
+.action-buttons .action-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
